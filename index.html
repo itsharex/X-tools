@@ -2,12 +2,33 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>Hello World!</title>
-
+    <title>X-tools</title>
   </head>
   <body>
-    <h1>💖 Hello World!</h1>
-    <p>Welcome to your Electron application.</p>
-    <script type="module" src="/src/renderer.ts"></script>
+    <div id="root">
+      <div style="
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <div style="
+          font-size: 1.6rem;
+          color: #000000;
+          animation: pulse 1.2s ease-in-out infinite;
+        ">
+          ......
+        </div>
+      </div>
+      <style>
+        @keyframes pulse {
+          0%, 100% { opacity: 0.2; }
+          50% { opacity: 1; }
+        }
+      </style>
+    </div>
+    
+    <script type="module" src="/src/renderer.tsx"></script>
   </body>
 </html>
