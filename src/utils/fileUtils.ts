@@ -21,6 +21,7 @@ export function getFileTree(dirPath: string): FileNode {
     try {
       const files = fs.readdirSync(dirPath);
       node.children = files
+        .filter(file => !file.startsWith('.')) // 过滤掉以.开头的隐藏文件和目录
         .map(file => {
           const filePath = path.join(dirPath, file);
           try {
