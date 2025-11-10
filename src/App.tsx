@@ -1,23 +1,7 @@
 import React, {useState} from 'react';
 import {ConfigProvider, Splitter, Button, Tree, message, Space} from "antd";
 import {DownOutlined} from '@ant-design/icons';
-
-// 文件树节点类型
-interface FileNode {
-    id: string;
-    name: string;
-    path: string;
-    isDirectory: boolean;
-    children?: FileNode[];
-}
-
-// Tree组件数据类型
-interface TreeNodeData {
-    title: string;
-    key: string;
-    icon?: string;
-    children?: TreeNodeData[];
-}
+import { FileNode, TreeNodeData } from './types';
 
 export const App: React.FC = () => {
     const [fileTree, setFileTree] = useState<FileNode | null>(null);
