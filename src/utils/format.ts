@@ -11,3 +11,19 @@ export function formatFileSize(size: number): string {
   return `${(size / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 }
 
+export function formatDate(ms: number): string {
+  try {
+    return new Date(ms).toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+  } catch {
+    return '-';
+  }
+}
+

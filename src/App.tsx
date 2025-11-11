@@ -1,12 +1,18 @@
 import React, {useState, useEffect} from 'react';
 import {ConfigProvider, Splitter, Button, Tree, message, Space, Dropdown, MenuProps, Typography} from "antd";
-import {DownOutlined, FolderOpenOutlined, PlusOutlined, DeleteOutlined, FileTextOutlined} from '@ant-design/icons';
-import type { DataNode, TreeProps } from 'antd/es/tree';
+import {DownOutlined, PlusOutlined, DeleteOutlined, FolderOpenOutlined, FileTextOutlined} from '@ant-design/icons';
+import type { TreeProps, DataNode } from 'antd/es/tree';
 import { FileNode } from './types';
 import { RecentFolder, FileInfo } from './types/api';
 import { FilePreview } from './components/FilePreview';
+import { formatFileSize, formatDate } from './utils/format';
+import { truncateFolderName } from './utils/uiUtils';
 
-type TreeNodeWithMeta = (DataNode & { meta: FileNode; children?: TreeNodeWithMeta[] });
+// 为Tree组件定义的节点类型
+export type TreeNodeWithMeta = DataNode & {
+  meta: FileNode;
+  children?: TreeNodeWithMeta[];
+};
 
 export const App: React.FC = () => {
     const [fileTree, setFileTree] = useState<FileNode | null>(null);
@@ -17,44 +23,6 @@ export const App: React.FC = () => {
     const [selectedInfo, setSelectedInfo] = useState<FileInfo | null>(null);
 
     const { Text } = Typography;
-    
-    // 限制文件夹名称长度，中文10个字符以内，英文20个字符以内
-    const truncateFolderName = (name: string): string => {
-        // 计算字符串长度，中文字符计为1，英文字符计为0.5
-        let length = 0;
-        let result = '';
-        
-        for (let i = 0; i < name.length; i++) {
-            const char = name[i];
-            // 检查是否为中文字符（Unicode范围）
-            const isChinese = /[\u4e00-\u9fa5]/.test(char);
-            
-            if (isChinese) {
-                // 中文字符，占1个单位
-                if (length + 1 <= 10) {
-                    result += char;
-                    length += 1;
-                } else {
-                    break;
-                }
-            } else {
-                // 英文字符，占0.5个单位
-                if (length + 0.5 <= 10) {
-                    result += char;
-                    length += 0.5;
-                } else {
-                    break;
-                }
-            }
-        }
-        
-        // 如果有截断，添加省略号
-        if (result.length < name.length) {
-            return result + '...';
-        }
-        
-        return result;
-    };
 
     // 组件加载时获取最近文件夹列表和上次打开的文件夹
     useEffect(() => {
@@ -66,54 +34,35 @@ export const App: React.FC = () => {
     // 加载最近文件夹列表
     const loadRecentFolders = async () => {
         try {
-            // 添加防御性检查
             if (!window.electronAPI || !window.electronAPI.getRecentFolders) {
-                console.warn('electronAPI 不可用，使用模拟数据');
-                // 使用模拟数据进行测试
-                const mockFolders: RecentFolder[] = [
-                    { path: '/mock/path1', name: '文件夹1', timestamp: Date.now() - 3600000 }, // 1小时前
-                    { path: '/mock/path2', name: '测试文件夹2', timestamp: Date.now() - 7200000 }, // 2小时前
-                    { path: '/mock/path3', name: '很长的中文文件夹名称测试', timestamp: Date.now() - 1800000 } // 30分钟前
-                ];
-                const sortedFolders = mockFolders.sort((a, b) => b.timestamp - a.timestamp);
-                setRecentFolders(sortedFolders);
-                return sortedFolders;
+                console.warn('electronAPI 不可用，无法获取最近文件夹');
+                setRecentFolders([]);
+                return [];
             }
             
             const folders = await window.electronAPI.getRecentFolders();
             // 按时间戳降序排序，确保最新的文件夹在前面
             const sortedFolders = folders.sort((a, b) => b.timestamp - a.timestamp);
             setRecentFolders(sortedFolders);
-            console.log('最近文件夹列表:', sortedFolders);
             return sortedFolders;
         } catch (error) {
             console.error('获取最近文件夹失败:', error);
-            // 出错时使用模拟数据
-            const mockFolders: RecentFolder[] = [
-                { path: '/mock/path1', name: '文件夹1', timestamp: Date.now() - 3600000 },
-                { path: '/mock/path2', name: '测试文件夹2', timestamp: Date.now() - 7200000 },
-                { path: '/mock/path3', name: '很长的中文文件夹名称测试', timestamp: Date.now() - 1800000 }
-            ];
-            const sortedFolders = mockFolders.sort((a, b) => b.timestamp - a.timestamp);
-            setRecentFolders(sortedFolders);
-            return sortedFolders;
+            message.error('获取最近文件夹失败');
+            setRecentFolders([]);
+            return [];
         }
     };
 
     // 加载上次打开的文件夹
     const loadLastOpenedFolder = async () => {
         try {
-            console.log('尝试加载上次打开的文件夹');
-            
-            // 添加防御性检查
             if (!window.electronAPI || !window.electronAPI.getLastOpenedFolder) {
-                console.warn('electronAPI 不可用，直接使用第一个最近文件夹');
+                console.warn('electronAPI 不可用，无法获取上次打开的文件夹');
                 useFirstRecentFolder();
                 return;
             }
             
             const lastFolder = await window.electronAPI.getLastOpenedFolder();
-            console.log('获取到的lastFolder:', lastFolder);
             
             if (lastFolder) {
                 // 验证文件夹是否仍然存在
@@ -121,17 +70,8 @@ export const App: React.FC = () => {
                     if (window.electronAPI && window.electronAPI.getFileTree) {
                         const tree = await window.electronAPI.getFileTree(lastFolder.path);
                         setFileTree(tree);
-                        console.log(`自动加载上次打开的文件夹: ${lastFolder.name}`);
                     } else {
-                        // 使用模拟的文件树数据
-                        const mockTree: FileNode = {
-                            id: lastFolder.path,
-                            name: lastFolder.name,
-                            path: lastFolder.path,
-                            isDirectory: true,
-                            children: []
-                        };
-                        setFileTree(mockTree);
+                        console.warn('无法获取文件树');
                     }
                 } catch (error) {
                     console.error('上次打开的文件夹不存在或无法访问:', error);
@@ -139,7 +79,6 @@ export const App: React.FC = () => {
                     useFirstRecentFolder();
                 }
             } else {
-                console.log('没有找到lastOpenedFolder，尝试使用最近文件夹列表中的第一个');
                 // 如果没有lastOpenedFolder但有recentFolders，使用第一个最近文件夹
                 useFirstRecentFolder();
             }
@@ -155,36 +94,14 @@ export const App: React.FC = () => {
         if (recentFolders.length > 0) {
             try {
                 const firstFolder = recentFolders[0];
-                console.log(`尝试使用第一个最近文件夹: ${firstFolder.name}`);
                 
                 if (window.electronAPI && window.electronAPI.getFileTree) {
                     const tree = await window.electronAPI.getFileTree(firstFolder.path);
                     setFileTree(tree);
-                    console.log(`已加载最近文件夹: ${firstFolder.name}`);
-                } else {
-                    // 使用模拟的文件树数据
-                    const mockTree: FileNode = {
-                        id: firstFolder.path,
-                        name: firstFolder.name,
-                        path: firstFolder.path,
-                        isDirectory: true,
-                        children: []
-                    };
-                    setFileTree(mockTree);
-                    console.log(`已加载模拟的最近文件夹: ${firstFolder.name}`);
                 }
             } catch (error) {
                 console.error('加载第一个最近文件夹失败:', error);
-                // 出错时使用模拟数据
-                const firstFolder = recentFolders[0];
-                const mockTree: FileNode = {
-                    id: firstFolder.path,
-                    name: firstFolder.name,
-                    path: firstFolder.path,
-                    isDirectory: true,
-                    children: []
-                };
-                setFileTree(mockTree);
+                message.error('加载文件夹失败');
             }
         }
     };
@@ -277,7 +194,7 @@ export const App: React.FC = () => {
                 label: (
                     <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '300px'}}>
                         <div style={{flex: 1, display: 'flex', alignItems: 'center'}}>
-                            <span title={folder.path}>{truncateFolderName(folder.name)}</span>
+                            <span title={folder.path}>{truncateFolderName(folder.name || '')}</span>
                         </div>
                         <span style={{fontSize: '12px', color: '#999', marginRight: '8px'}}>{new Date(folder.timestamp).toLocaleString('zh-CN', { 
                             month: '2-digit', 
@@ -305,6 +222,8 @@ export const App: React.FC = () => {
             }))
         ] : []
     ];
+
+
 
     // 转换文件节点为Tree组件需要的数据格式
     const transformToTreeData = (node: FileNode): TreeNodeWithMeta => {
@@ -386,7 +305,7 @@ export const App: React.FC = () => {
                     </Space>
                     <div style={{padding: 16, height: 'calc(100% - 40px)', overflow: 'auto'}}>
                         {fileTree ? (
-                            <Tree
+                            <Tree<TreeNodeWithMeta>
                                 treeData={[transformToTreeData(fileTree)]}
                                 style={{maxHeight: '100%'}}
                                 blockNode
@@ -460,24 +379,4 @@ export const App: React.FC = () => {
     );
 };
 
-function formatFileSize(size: number): string {
-    if (size < 1024) return `${size} B`;
-    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
-    if (size < 1024 * 1024 * 1024) return `${(size / (1024 * 1024)).toFixed(1)} MB`;
-    return `${(size / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-}
-function formatDate(ms: number): string {
-    try {
-        return new Date(ms).toLocaleString('zh-CN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false
-        });
-    } catch {
-        return '-';
-    }
-}
+// formatFileSize 函数已从 utils/format.ts 导入
