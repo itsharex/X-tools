@@ -322,7 +322,8 @@ export const App: React.FC = () => {
                         )}
                     </div>
                 </Splitter.Panel>
-                <Splitter.Panel min={240}>
+                {/*panel 默认有个 padding 0 1，中间去掉，避免边缘一条白线。*/}
+                <Splitter.Panel min={240} style={{padding:0}}>
                     <div className={'top-bar'}>
                         <div className="one-line">
                             {selectedFile ? selectedFile.name : ''}
@@ -330,7 +331,7 @@ export const App: React.FC = () => {
                     </div>
                     <div style={{height: 'calc(100% - 40px)', padding: 0}}>
                         {selectedFile ? (
-                            <div style={{height: '100%', padding: 16, background: '#f7f7f7'}}>
+                            <div style={{height: '100%', padding: 0, background: '#f7f7f7'}}>
                                 <div style={{height: '100%'}}>
                                     <FilePreview
                                         filePath={selectedFile.path}

@@ -41,7 +41,7 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({ path }) => {
         height="100%"
         ref={videoRef}
         src={src}
-        style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 8, background: '#000' }}
+        style={{ maxWidth: '100%', maxHeight: '100%', background: '#000' }}
         controls
         playsInline
         preload="metadata"
