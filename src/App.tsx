@@ -303,7 +303,7 @@ export const App: React.FC = () => {
                             </Button>
                         </Dropdown>
                     </Space>
-                    <div style={{padding: 16, height: 'calc(100% - 40px)', overflow: 'auto'}}>
+                    <div style={{padding: 16, height: 'calc(100% - 40px)', overflowY: 'auto'}}>
                         {fileTree ? (
                             <Tree<TreeNodeWithMeta>
                                 treeData={[transformToTreeData(fileTree)]}
@@ -311,9 +311,9 @@ export const App: React.FC = () => {
                                 blockNode
                                 showLine
                                 switcherIcon={<DownOutlined/>}
-                                showIcon
                                 selectedKeys={selectedKeys}
                                 onSelect={handleTreeSelect}
+                                defaultExpandAll={false}
                             />
                         ) : (
                             <div style={{textAlign: 'center', color: '#999', padding: 20}}>
@@ -324,7 +324,9 @@ export const App: React.FC = () => {
                 </Splitter.Panel>
                 <Splitter.Panel min={240}>
                     <div className={'top-bar'}>
-                        {selectedFile ? truncateFolderName(selectedFile.name) : '中间区域'}
+                        <div className="one-line">
+                            {selectedFile ? selectedFile.name : ''}
+                        </div>
                     </div>
                     <div style={{height: 'calc(100% - 40px)', padding: 0}}>
                         {selectedFile ? (

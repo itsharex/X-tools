@@ -37,6 +37,8 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({ path }) => {
         </div>
       )}
       <video
+        width="100%"
+        height="100%"
         ref={videoRef}
         src={src}
         style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 8, background: '#000' }}
@@ -45,6 +47,7 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({ path }) => {
         preload="metadata"
         onLoadedMetadata={handleLoadedMetadata}
         onCanPlay={handleCanPlay}
+        autoPlay
       />
     </div>
   );
