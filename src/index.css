@@ -10,20 +10,15 @@ body {
 }
 
 .top-bar {
-    /* 重新启用标题栏拖动功能 */
-    -webkit-app-region: drag;
+    app-region: drag;
     height: 40px;
     background-color: rgba(0,0,0,0.02);
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    padding: 0 16px;
 }
 
 /* 为按钮等可交互元素添加 no-drag 属性，确保它们可以正常响应点击事件 */
 .top-bar button,
 .top-bar .no-drag {
-    -webkit-app-region: no-drag;
+    app-region: no-drag;
 }
 
 /* 单行文本样式：保持一行，居中，边距16px，超出缩短 */
@@ -32,5 +27,5 @@ body {
     text-align: center;
     overflow: hidden;
     text-overflow: ellipsis;
-    width: 100%;
+    width: auto;
 }

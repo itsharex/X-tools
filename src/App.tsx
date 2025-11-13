@@ -1,17 +1,17 @@
 import React, {useState, useEffect} from 'react';
-import {ConfigProvider, Splitter, Button, Tree, message, Space, Dropdown, MenuProps, Typography} from "antd";
+import {ConfigProvider, Splitter, Button, Tree, message, Space, Dropdown, MenuProps, Typography, Flex} from "antd";
 import {DownOutlined, PlusOutlined, DeleteOutlined, FolderOpenOutlined, FileTextOutlined} from '@ant-design/icons';
-import type { TreeProps, DataNode } from 'antd/es/tree';
-import { FileNode } from './types';
-import { RecentFolder, FileInfo } from './types/api';
-import { FilePreview } from './components/FilePreview';
-import { formatFileSize, formatDate } from './utils/format';
-import { truncateFolderName } from './utils/uiUtils';
+import type {TreeProps, DataNode} from 'antd/es/tree';
+import {FileNode} from './types';
+import {RecentFolder, FileInfo} from './types/api';
+import {FilePreview} from './components/FilePreview';
+import {formatFileSize, formatDate} from './utils/format';
+import {truncateFolderName} from './utils/uiUtils';
 
 // 为Tree组件定义的节点类型
 export type TreeNodeWithMeta = DataNode & {
-  meta: FileNode;
-  children?: TreeNodeWithMeta[];
+    meta: FileNode;
+    children?: TreeNodeWithMeta[];
 };
 
 export const App: React.FC = () => {
@@ -22,7 +22,7 @@ export const App: React.FC = () => {
     const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
     const [selectedInfo, setSelectedInfo] = useState<FileInfo | null>(null);
 
-    const { Text } = Typography;
+    const {Text} = Typography;
 
     // 组件加载时获取最近文件夹列表和上次打开的文件夹
     useEffect(() => {
@@ -39,7 +39,7 @@ export const App: React.FC = () => {
                 setRecentFolders([]);
                 return [];
             }
-            
+
             const folders = await window.electronAPI.getRecentFolders();
             // 按时间戳降序排序，确保最新的文件夹在前面
             const sortedFolders = folders.sort((a, b) => b.timestamp - a.timestamp);
@@ -61,9 +61,9 @@ export const App: React.FC = () => {
                 useFirstRecentFolder();
                 return;
             }
-            
+
             const lastFolder = await window.electronAPI.getLastOpenedFolder();
-            
+
             if (lastFolder) {
                 // 验证文件夹是否仍然存在
                 try {
@@ -88,13 +88,13 @@ export const App: React.FC = () => {
             useFirstRecentFolder();
         }
     };
-    
+
     // 使用第一个最近文件夹
     const useFirstRecentFolder = async () => {
         if (recentFolders.length > 0) {
             try {
                 const firstFolder = recentFolders[0];
-                
+
                 if (window.electronAPI && window.electronAPI.getFileTree) {
                     const tree = await window.electronAPI.getFileTree(firstFolder.path);
                     setFileTree(tree);
@@ -134,12 +134,12 @@ export const App: React.FC = () => {
     const handleSelectRecentFolder = async (folder: RecentFolder) => {
         try {
             setLoading(true);
-            
+
             // 获取文件树结构
             const tree = await window.electronAPI.getFileTree(folder.path);
             setFileTree(tree);
             message.success(`已加载文件夹: ${folder.name}`);
-            
+
             // 更新文件夹的最后打开时间
             if (window.electronAPI && window.electronAPI.updateFolderTimestamp) {
                 await window.electronAPI.updateFolderTimestamp(folder.path);
@@ -157,14 +157,14 @@ export const App: React.FC = () => {
     // 处理删除最近文件夹
     const handleRemoveRecentFolder = async (folderPath: string, e: React.MouseEvent) => {
         e.stopPropagation(); // 阻止事件冒泡，避免触发文件夹选择
-        
+
         try {
             if (window.electronAPI && window.electronAPI.removeRecentFolder) {
                 await window.electronAPI.removeRecentFolder(folderPath);
                 message.success('文件夹已从最近列表中删除');
                 // 重新加载最近文件夹列表
                 await loadRecentFolders();
-                
+
                 // 如果删除的是当前打开的文件夹，清空fileTree
                 if (fileTree && fileTree.path === folderPath) {
                     setFileTree(null);
@@ -175,12 +175,12 @@ export const App: React.FC = () => {
             message.error('删除文件夹失败，请重试');
         }
     };
-    
+
     // 下拉菜单选项
     const menuItems: MenuProps['items'] = [
         {
             key: 'new',
-            icon: <PlusOutlined />,
+            icon: <PlusOutlined/>,
             label: '选择新文件夹',
             onClick: handleSelectDirectory
         },
@@ -190,21 +190,21 @@ export const App: React.FC = () => {
             },
             ...recentFolders.map((folder) => ({
                 key: folder.path,
-                icon: <FolderOpenOutlined />,
+                icon: <FolderOpenOutlined/>,
                 label: (
                     <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '300px'}}>
                         <div style={{flex: 1, display: 'flex', alignItems: 'center'}}>
                             <span title={folder.path}>{truncateFolderName(folder.name || '')}</span>
                         </div>
-                        <span style={{fontSize: '12px', color: '#999', marginRight: '8px'}}>{new Date(folder.timestamp).toLocaleString('zh-CN', { 
-                            month: '2-digit', 
-                            day: '2-digit', 
-                            hour: '2-digit', 
+                        <span style={{fontSize: '12px', color: '#999', marginRight: '8px'}}>{new Date(folder.timestamp).toLocaleString('zh-CN', {
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
                             minute: '2-digit',
-                            hour12: false 
+                            hour12: false
                         })}</span>
-                        <DeleteOutlined 
-                            style={{fontSize: '14px', color: '#666', cursor: 'pointer', transition: 'all 0.3s'}} 
+                        <DeleteOutlined
+                            style={{fontSize: '14px', color: '#666', cursor: 'pointer', transition: 'all 0.3s'}}
                             title="从列表中删除"
                             onClick={(e) => handleRemoveRecentFolder(folder.path, e)}
                             onMouseEnter={(e) => {
@@ -224,13 +224,12 @@ export const App: React.FC = () => {
     ];
 
 
-
     // 转换文件节点为Tree组件需要的数据格式
     const transformToTreeData = (node: FileNode): TreeNodeWithMeta => {
         const result: TreeNodeWithMeta = {
             title: node.name,
             key: node.id,
-            icon: node.isDirectory ? <FolderOpenOutlined /> : <FileTextOutlined />,
+            icon: node.isDirectory ? <FolderOpenOutlined/> : <FileTextOutlined/>,
             meta: node,
             isLeaf: !node.isDirectory
         };
@@ -291,18 +290,28 @@ export const App: React.FC = () => {
                 },
             }}
         >
+            {/*标题栏*/}
+            <Flex className={'top-bar'} style={{height: 40}} align={'center'}>
+                <div style={{flex:'0 0 72px'}}></div>
+                <div style={{paddingRight: 16}}>
+                    <Dropdown menu={{items: menuItems}} placement="bottomLeft">
+                        <Button
+                            type="link"
+                            loading={loading}
+                        >
+                            {fileTree ? truncateFolderName(fileTree.name) : '选择文件夹'} <DownOutlined/>
+                        </Button>
+                    </Dropdown>
+                </div>
+                <div style={{flex: '1 3 auto', minWidth: 0}}>
+                    <div className="one-line">
+                        {selectedFile ? selectedFile.name : ''}
+                    </div>
+                </div>
+                <div style={{flex: '0 0 auto', paddingLeft: 16, paddingRight: 16}}></div>
+            </Flex>
             <Splitter style={{height: '100vh'}}>
                 <Splitter.Panel defaultSize={320} min={80}>
-                    <Space className={'top-bar'}>
-                        <Dropdown menu={{ items: menuItems }} placement="bottomLeft">
-                            <Button
-                                type="link"
-                                loading={loading}
-                            >
-                                {fileTree ? truncateFolderName(fileTree.name) : '选择文件夹'} <DownOutlined />
-                            </Button>
-                        </Dropdown>
-                    </Space>
                     <div style={{padding: 16, height: 'calc(100% - 40px)', overflowY: 'auto'}}>
                         {fileTree ? (
                             <Tree<TreeNodeWithMeta>
@@ -323,13 +332,8 @@ export const App: React.FC = () => {
                     </div>
                 </Splitter.Panel>
                 {/*panel 默认有个 padding 0 1，中间去掉，避免边缘一条白线。*/}
-                <Splitter.Panel min={240} style={{padding:0}}>
-                    <div className={'top-bar'}>
-                        <div className="one-line">
-                            {selectedFile ? selectedFile.name : ''}
-                        </div>
-                    </div>
-                    <div style={{height: 'calc(100% - 40px)', padding: 0}}>
+                <Splitter.Panel min={240} style={{padding: 0}}>
+                                       <div style={{height: 'calc(100% - 40px)', padding: 0}}>
                         {selectedFile ? (
                             <div style={{height: '100%', padding: 0, background: '#f7f7f7'}}>
                                 <div style={{height: '100%'}}>
@@ -347,7 +351,6 @@ export const App: React.FC = () => {
                     </div>
                 </Splitter.Panel>
                 <Splitter.Panel defaultSize={320} min={80}>
-                    <div className={'top-bar'}>右侧区域</div>
                     <div style={{padding: 16}}>
                         {selectedFile ? (
                             <div style={{display: 'flex', flexDirection: 'column', gap: 8}}>
@@ -356,13 +359,13 @@ export const App: React.FC = () => {
                                 <div style={{wordBreak: 'break-all'}}><Text type="secondary">路径：</Text>{selectedFile.path}</div>
                                 <div><Text type="secondary">类型：</Text>{selectedFile.isDirectory ? '目录' : '文件'}</div>
                                 {!selectedFile.isDirectory && selectedInfo && (
-                                  <>
-                                    <div><Text type="secondary">扩展名：</Text>{selectedInfo.ext || '-'}</div>
-                                    <div><Text type="secondary">大小：</Text>{formatFileSize(selectedInfo.size)}</div>
-                                  </>
+                                    <>
+                                        <div><Text type="secondary">扩展名：</Text>{selectedInfo.ext || '-'}</div>
+                                        <div><Text type="secondary">大小：</Text>{formatFileSize(selectedInfo.size)}</div>
+                                    </>
                                 )}
                                 {selectedFile.isDirectory && selectedInfo && (
-                                  <div><Text type="secondary">子项数量：</Text>{selectedInfo.childrenCount ?? 0}</div>
+                                    <div><Text type="secondary">子项数量：</Text>{selectedInfo.childrenCount ?? 0}</div>
                                 )}
                                 {selectedInfo && (
                                     <>
