@@ -350,8 +350,8 @@ export const App: React.FC = () => {
                 </Flex>
             )}
             <Splitter style={{height: titleBarVisible ? 'calc(100vh - 40px)' : '100vh'}}>
-                <Splitter.Panel defaultSize={320} min={80}>
-                    <div style={{height: '100%', backgroundColor: 'white', overflow: 'hidden'}}>
+                <Splitter.Panel defaultSize={'25%'} min={'10%'} max={'45%'} collapsible>
+                    <div style={{height: '100%', backgroundColor: 'white', overflow: 'hidden',overflowY:'scroll'}}>
                         {fileTree ? (
                             <Tree<TreeNodeWithMeta>
                                 treeData={transformToTreeData(fileTree).children}
@@ -371,7 +371,7 @@ export const App: React.FC = () => {
                     </div>
                 </Splitter.Panel>
                 {/*panel 默认有个 padding 0 1，中间去掉，避免边缘一条白线。*/}
-                <Splitter.Panel min={240} style={{padding: 0}}>
+                <Splitter.Panel style={{padding: 0}}>
                     {selectedFile ? (
                         <div style={{height: '100%', padding: 0, background: '#f7f7f7'}}>
                             <div style={{height: '100%'}}>
@@ -387,7 +387,7 @@ export const App: React.FC = () => {
                         </div>
                     )}
                 </Splitter.Panel>
-                <Splitter.Panel defaultSize={320} min={80}>
+                <Splitter.Panel defaultSize={'25%'} min={'10%'} max={'45%'} collapsible>
                     <div style={{padding: 16}}>
                         {selectedFile ? (
                             <div style={{display: 'flex', flexDirection: 'column', gap: 8}}>
