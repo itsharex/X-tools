@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {Button, ConfigProvider, Dropdown, Flex, MenuProps, message, Splitter, Tree, Typography} from "antd";
+import {Button, ConfigProvider, Dropdown, Flex, message, Splitter, Tree, Typography} from "antd";
 import {DeleteOutlined, DownOutlined, EyeInvisibleOutlined, FileTextOutlined, FolderOpenOutlined, PlusOutlined} from '@ant-design/icons';
 import type {DataNode, TreeProps} from 'antd/es/tree';
 import {FileNode} from './types';

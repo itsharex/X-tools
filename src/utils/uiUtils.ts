@@ -40,9 +40,3 @@ export const truncateFolderName = (name: string): string => {
   
   return result;
 };
-
-// 为Tree组件定义的节点类型
-export type TreeNodeWithMeta = (DataNode & { meta: FileNode; children?: TreeNodeWithMeta[] });
-
-// 转换函数的类型定义
-export type TransformToTreeData = (node: FileNode) => TreeNodeWithMeta;
