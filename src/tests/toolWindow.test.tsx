@@ -3,6 +3,9 @@ import { ToolWindow, DefaultToolWindowManager } from '../types/toolWindow';
 // 简单的测试组件
 const TestComponent = () => 'Test Content';
 
+// 简单的测试图标组件
+const TestIcon = () => <span>🔧</span>;
+
 /**
  * ToolWindow 类的简单测试
  */
@@ -16,7 +19,7 @@ export const testToolWindow = () => {
         description: '这是一个测试窗口',
         isVisible: false,
         view: <TestComponent />,
-        icon: 'test',
+        icon: <TestIcon />,
         shortcut: 'Ctrl+T',
         defaultWidth: 200,
         defaultHeight: 150

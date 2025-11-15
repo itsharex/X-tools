@@ -10,7 +10,7 @@ export class ToolWindow {
     private _description: string;
     private _isVisible: boolean;
     private _view: ReactNode;
-    private _icon?: string;
+    private _icon?: ReactNode;
     private _shortcut?: string;
     private _isResizable?: boolean;
     private _defaultWidth?: number;
@@ -66,11 +66,11 @@ export class ToolWindow {
         this._view = value;
     }
 
-    get icon(): string | undefined {
+    get icon(): ReactNode | undefined {
         return this._icon;
     }
 
-    set icon(value: string | undefined) {
+    set icon(value: ReactNode | undefined) {
         this._icon = value;
     }
 
@@ -188,8 +188,8 @@ export interface ToolWindowOptions {
     isVisible?: boolean;
     /** React组件视图 */
     view: ReactNode;
-    /** 图标名称或路径 */
-    icon?: string;
+    /** 图标 React 组件 */
+    icon?: ReactNode;
     /** 快捷键 */
     shortcut?: string;
     /** 是否可调整大小，默认为true */

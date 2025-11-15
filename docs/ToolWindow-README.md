@@ -25,13 +25,20 @@ const MyPanel: React.FC = () => {
     return <div>我的面板内容</div>;
 };
 
+// 图标组件
+const FolderIcon: React.FC = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z"/>
+    </svg>
+);
+
 const toolWindow = new ToolWindow({
     id: 'my-panel',
     name: '我的面板',
     description: '这是一个示例面板',
     isVisible: false,
     view: <MyPanel />,
-    icon: 'panel-icon',
+    icon: <FolderIcon />,
     shortcut: 'Ctrl+Shift+M',
     defaultWidth: 300,
     defaultHeight: 400
@@ -70,7 +77,7 @@ const visibleWindows = toolWindowManager.getVisible();
 | `description` | `string` | ✓ | - | 工具窗口描述 |
 | `isVisible` | `boolean` | ✗ | `false` | 是否可见 |
 | `view` | `ReactNode` | ✓ | - | React 组件视图 |
-| `icon` | `string` | ✗ | - | 图标名称或路径 |
+| `icon` | `ReactNode` | ✗ | - | 图标 React 组件 |
 | `shortcut` | `string` | ✗ | - | 快捷键 |
 | `isResizable` | `boolean` | ✗ | `true` | 是否可调整大小 |
 | `defaultWidth` | `number` | ✗ | - | 默认宽度 |
@@ -106,9 +113,10 @@ const visibleWindows = toolWindowManager.getVisible();
 ## 注意事项
 
 1. **唯一 ID**: 确保每个工具窗口的 ID 是唯一的
-2. **React 组件**: view 属性必须是有效的 ReactNode
-3. **内存管理**: 使用完毕后记得调用 `unregister` 清理不需要的工具窗口
-4. **类型安全**: 充分利用 TypeScript 的类型检查功能
+2. **React 组件**: view 和 icon 属性必须是有效的 ReactNode
+3. **图标组件**: icon 应该是返回 JSX 的 React 函数组件，可以是 SVG 图标、字体图标或任何其他 React 元素
+4. **内存管理**: 使用完毕后记得调用 `unregister` 清理不需要的工具窗口
+5. **类型安全**: 充分利用 TypeScript 的类型检查功能
 
 ## 扩展
 

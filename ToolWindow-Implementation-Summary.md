@@ -12,7 +12,7 @@
 - `description`: 工具窗口描述
 - `isVisible`: 可见性状态
 - `view`: React 函数组件
-- `icon`: 图标（可选）
+- `icon`: React 图标组件（SVG、字体图标等）
 - `shortcut`: 快捷键（可选）
 - `isResizable`: 是否可调整大小（可选，默认 true）
 - `defaultWidth`: 默认宽度（可选）
@@ -95,13 +95,20 @@ src/
 ```typescript
 import { ToolWindow } from './types/toolWindow';
 
+// 图标组件
+const FolderIcon: React.FC = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z"/>
+    </svg>
+);
+
 const toolWindow = new ToolWindow({
     id: 'my-tool',
     name: '我的工具',
     description: '工具描述',
     isVisible: false,
     view: <MyComponent />,
-    icon: 'tool-icon',
+    icon: <FolderIcon />,
     shortcut: 'Ctrl+Shift+T'
 });
 ```
