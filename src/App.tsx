@@ -16,10 +16,11 @@ export type TreeNodeWithMeta = DataNode & {
 };
 
 export const App: React.FC = () => {
-    const [fileTree, setFileTree] = useState<FileNode | null>(null);
     const [loading, setLoading] = useState(false);
     const [config, setConfig] = useState<Config | null>(null);
     const [recentFolders, setRecentFolders] = useState<RecentFolder[]>([]);
+    const [currentFolder, setCurrentFolder] = useState<string>(null);
+    const [fileTree, setFileTree] = useState<FileNode | null>(null);
     const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
     const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
     const [selectedInfo, setSelectedInfo] = useState<FileInfo | null>(null);
@@ -29,31 +30,37 @@ export const App: React.FC = () => {
 
     // 加载配置文件
     useEffect(() => {
-        console.log('loading config')
+        console.log('config changed', config);
         setLoading(true);
-        window.electronAPI.loadConfig().then(async (config) => {
-            console.log('get config', config);
-            setConfig(config);
-            setLoading(false);
-        }).catch(error => {
-            console.error('加载配置失败:', error);
-            // 如果加载失败，设置一个默认配置
-            setConfig({
-                recentFolders: []
-            });
-            setLoading(false);
-        })
-    }, []);
+        if (config == null) {
+            window.electronAPI.loadConfig().then(async (loadedConfig) => {
+                console.log('get config', loadedConfig);
+                setConfig(loadedConfig);
+            })
+        } else {
+            setRecentFolders(config.recentFolders || []);
+            setCurrentFolder(config.recentFolders[0]?.path)
+            window.electronAPI.saveConfig(config);
+        }
+        setLoading(false);
+    }, [config]);
 
     useEffect(() => {
-        console.log('config changed', config);
-        if (config == null) return
-        setLoading(true);
-        setRecentFolders(config.recentFolders);
-        loadFolderTree().then(() => {
-            setLoading(false);
-        })
-    }, [config]);
+        console.log('currentFolder changed', currentFolder);
+        if (currentFolder) {
+            setLoading(true);
+            loadFolderTree().then(() => {
+                setLoading(false);
+            })
+            setSelectedFile(null)
+            setConfig(updateFolderPath(config, currentFolder))
+        } else {
+            setFileTree(null)
+            setSelectedKeys([]);
+            setSelectedFile(null);
+            setSelectedInfo(null);
+        }
+    }, [currentFolder]);
 
     async function loadFolderTree() {
         console.log('loading folder tree');
@@ -68,7 +75,7 @@ export const App: React.FC = () => {
             } finally {
                 setLoading(false);
             }
-        }else{
+        } else {
             console.log('no folder to load');
         }
     }
@@ -82,59 +89,13 @@ export const App: React.FC = () => {
             const dirPath = await window.electronAPI.selectDirectory();
 
             if (dirPath && config) {
-                const c = updateFolderPath(config, dirPath);
-                setConfig(c);
-                await window.electronAPI.saveConfig(c);
-                
-                // 直接加载选择的文件夹树
-                const tree = await window.electronAPI.getFileTree(dirPath);
-                setFileTree(tree);
+                setConfig(updateFolderPath(config, dirPath))
             }
         } catch (error) {
             console.error('选择文件夹失败:', error);
             message.error('选择文件夹失败，请重试');
         } finally {
             setLoading(false);
-        }
-    };
-
-    // 从最近文件夹列表选择
-    const handleSelectRecentFolder = async (folder: RecentFolder) => {
-        try {
-            setLoading(true);
-
-            if (config) {
-                const c = updateFolderPath(config, folder.path);
-                setConfig(c);
-                await window.electronAPI.saveConfig(c);
-                
-                // 直接加载选择的文件夹树
-                const tree = await window.electronAPI.getFileTree(folder.path);
-                setFileTree(tree);
-            }
-        } catch (error) {
-            console.error('加载文件夹失败:', error);
-            message.error('加载文件夹失败，请重试');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // 处理删除最近文件夹
-    const handleRemoveRecentFolder = async (folderPath: string, e: React.MouseEvent) => {
-        e.stopPropagation(); // 阻止事件冒泡，避免触发文件夹选择
-
-        try {
-            if (config) {
-                // 创建新的配置对象副本，避免直接修改原对象
-                const newConfig = { ...config, recentFolders: [...config.recentFolders] };
-                removeFolderPath(newConfig, folderPath);
-                setConfig(newConfig);
-                await window.electronAPI.saveConfig(newConfig);
-            }
-        } catch (error) {
-            console.error('删除文件夹失败:', error);
-            message.error('删除文件夹失败，请重试');
         }
     };
 
@@ -187,13 +148,6 @@ export const App: React.FC = () => {
             // 忽略错误
         }
     };
-
-    // 文件树变化时重置选择状态
-    useEffect(() => {
-        setSelectedKeys([]);
-        setSelectedFile(null);
-        setSelectedInfo(null);
-    }, [fileTree?.id]);
 
     return (
         <ConfigProvider
@@ -265,7 +219,10 @@ export const App: React.FC = () => {
                                                     <DeleteOutlined
                                                         style={{fontSize: '14px', color: '#666', cursor: 'pointer', transition: 'all 0.3s'}}
                                                         title="从列表中删除"
-                                                        onClick={(e) => handleRemoveRecentFolder(folder.path, e)}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            setConfig(removeFolderPath(config, folder.path))
+                                                        }}
                                                         onMouseEnter={(e) => {
                                                             e.currentTarget.style.transform = 'scale(1.6)';
                                                             e.currentTarget.style.color = '#ff4d4f';
@@ -277,7 +234,7 @@ export const App: React.FC = () => {
                                                     />
                                                 </div>
                                             ),
-                                            onClick: () => handleSelectRecentFolder(folder)
+                                            onClick: () => setConfig(updateFolderPath(config, folder.path))
                                         }))
                                     ] : []
                                 ]

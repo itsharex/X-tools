@@ -13,7 +13,7 @@ export function updateFolderPath(config: Config, folderPath: string): Config {
 
     config.recentFolders.unshift({
         path: folderPath,
-        name: folderPath.substring(folderPath.lastIndexOf('/')+1),
+        name: folderPath.substring(folderPath.lastIndexOf('/') + 1),
         timestamp: Date.now(),
     });
 
@@ -21,14 +21,17 @@ export function updateFolderPath(config: Config, folderPath: string): Config {
     if (config.recentFolders.length > 10) {
         config.recentFolders = config.recentFolders.slice(0, 10);
     }
-
-    return config
+    console.log('Recent folders updated', config);
+    return {...config}
 }
 
-export function removeFolderPath(config: Config, folderPath: string): void {
+export function removeFolderPath(config: Config, folderPath: string): Config {
+    console.log(`Removing folder ${folderPath} from`, config);
     // 找到并更新recentFolders中的对应文件夹
     const folderIndex = config.recentFolders.findIndex(folder => folder.path === folderPath);
     if (folderIndex !== -1) {
         config.recentFolders.splice(folderIndex, 1);
     }
+    console.log(`Removed folder ${folderPath} from `, config);
+    return {...config}
 }
