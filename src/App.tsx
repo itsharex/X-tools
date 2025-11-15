@@ -5,7 +5,8 @@ import type {DataNode, TreeProps} from 'antd/es/tree';
 import {FileNode} from './types';
 import {FileInfo, RecentFolder} from './types/api';
 import {FilePreview} from './components/FilePreview';
-import {formatDate, formatFileSize} from './utils/format';
+import {ToolWindowsPane} from './components/windows/ToolWindowsPane';
+import {AppProvider, useAppContext} from './contexts/AppContext';
 import {truncateFolderName} from './utils/uiUtils';
 import {Config, removeFolderPath, updateFolderPath} from "./utils/config";
 
@@ -15,14 +16,16 @@ export type TreeNodeWithMeta = DataNode & {
     children?: TreeNodeWithMeta[];
 };
 
-export const App: React.FC = () => {
+const AppContent: React.FC = () => {
+    console.log('AppContent 组件开始渲染');
+    const { currentFolder, setCurrentFolder, currentFile, setCurrentFile } = useAppContext();
+    console.log('Context 数据:', { currentFolder, currentFile });
+    
     const [loading, setLoading] = useState(false);
     const [config, setConfig] = useState<Config | null>(null);
     const [recentFolders, setRecentFolders] = useState<RecentFolder[]>([]);
-    const [currentFolder, setCurrentFolder] = useState<string>(null);
     const [fileTree, setFileTree] = useState<FileNode | null>(null);
     const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
-    const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
     const [selectedInfo, setSelectedInfo] = useState<FileInfo | null>(null);
     const [titleBarVisible, setTitleBarVisible] = useState(true);
 
@@ -33,14 +36,29 @@ export const App: React.FC = () => {
         console.log('config changed', config);
         setLoading(true);
         if (config == null) {
-            window.electronAPI.loadConfig().then(async (loadedConfig) => {
-                console.log('get config', loadedConfig);
-                setConfig(loadedConfig);
-            })
+            if (window.electronAPI) {
+                window.electronAPI.loadConfig().then(async (loadedConfig) => {
+                    console.log('get config', loadedConfig);
+                    setConfig(loadedConfig);
+                })
+            } else {
+                // 浏览器环境下的默认配置
+                setConfig({
+                    recentFolders: []
+                });
+            }
         } else {
             setRecentFolders(config.recentFolders || []);
-            setCurrentFolder(config.recentFolders[0]?.path)
-            window.electronAPI.saveConfig(config);
+            // 修复：只有在recentFolders有内容时才设置currentFolder
+            if (config.recentFolders && config.recentFolders.length > 0) {
+                console.log('设置currentFolder为:', config.recentFolders[0].path);
+                setCurrentFolder(config.recentFolders[0].path);
+            } else {
+                console.log('recentFolders为空，不设置currentFolder');
+            }
+            if (window.electronAPI) {
+                window.electronAPI.saveConfig(config);
+            }
         }
         setLoading(false);
     }, [config]);
@@ -52,22 +70,24 @@ export const App: React.FC = () => {
             loadFolderTree().then(() => {
                 setLoading(false);
             })
-            setSelectedFile(null)
+            setCurrentFile(null)
             setConfig(updateFolderPath(config, currentFolder))
         } else {
+            console.log('currentFolder为空，清空相关状态');
             setFileTree(null)
             setSelectedKeys([]);
-            setSelectedFile(null);
+            setCurrentFile(null);
             setSelectedInfo(null);
         }
     }, [currentFolder]);
 
     async function loadFolderTree() {
-        console.log('loading folder tree');
-        if (config && config.recentFolders.length > 0) {
+        console.log('loading folder tree, currentFolder:', currentFolder);
+        if (currentFolder && window.electronAPI) {
             try {
                 setLoading(true);
-                const tree = await window.electronAPI.getFileTree(config.recentFolders[0].path);
+                const tree = await window.electronAPI.getFileTree(currentFolder);
+                console.log('获取到文件树:', tree);
                 setFileTree(tree);
             } catch (error) {
                 console.error('选择文件夹失败:', error);
@@ -76,12 +96,17 @@ export const App: React.FC = () => {
                 setLoading(false);
             }
         } else {
-            console.log('no folder to load');
+            console.log('没有文件夹可加载或window.electronAPI不存在');
         }
     }
 
     // 处理选择文件夹
     const handleSelectDirectory = async () => {
+        if (!window.electronAPI) {
+            message.warning('此功能需要在 Electron 应用中使用');
+            return;
+        }
+        
         try {
             setLoading(true);
 
@@ -123,7 +148,7 @@ export const App: React.FC = () => {
         setSelectedKeys(stringKeys);
 
         if (!info || !info.node) {
-            setSelectedFile(null);
+            setCurrentFile(null);
             setSelectedInfo(null);
             return;
         }
@@ -135,7 +160,7 @@ export const App: React.FC = () => {
         }
 
         // 设置当前选择（文件或目录）
-        setSelectedFile(nodeMeta);
+        setCurrentFile(nodeMeta);
         setSelectedInfo(null);
 
         // 获取右侧信息
@@ -251,7 +276,7 @@ export const App: React.FC = () => {
                     </div>
                     <div style={{flex: '1 3 auto', minWidth: 0}}>
                         <div className="one-line">
-                            {selectedFile ? selectedFile.name : ''}
+                            {currentFile ? currentFile.name : ''}
                         </div>
                     </div>
                     <div style={{flex: '0 0 auto', paddingLeft: 16, paddingRight: 16, display: 'flex', alignItems: 'center'}}>
@@ -291,12 +316,12 @@ export const App: React.FC = () => {
                 </Splitter.Panel>
                 {/*panel 默认有个 padding 0 1，中间去掉，避免边缘一条白线。*/}
                 <Splitter.Panel style={{padding: 0}}>
-                    {selectedFile ? (
+                    {currentFile ? (
                         <div style={{height: '100%', padding: 0, background: '#f7f7f7'}}>
                             <div style={{height: '100%'}}>
                                 <FilePreview
-                                    filePath={selectedFile.path}
-                                    fileName={selectedFile.name}
+                                    filePath={currentFile.path}
+                                    fileName={currentFile.name}
                                 />
                             </div>
                         </div>
@@ -307,36 +332,18 @@ export const App: React.FC = () => {
                     )}
                 </Splitter.Panel>
                 <Splitter.Panel defaultSize={'25%'} min={'10%'} max={'45%'} collapsible>
-                    <div style={{padding: 16}}>
-                        {selectedFile ? (
-                            <div style={{display: 'flex', flexDirection: 'column', gap: 8}}>
-                                <h3>基本信息</h3>
-                                <div><Text type="secondary">名称：</Text>{selectedFile.name}</div>
-                                <div style={{wordBreak: 'break-all'}}><Text type="secondary">路径：</Text>{selectedFile.path}</div>
-                                <div><Text type="secondary">类型：</Text>{selectedFile.isDirectory ? '目录' : '文件'}</div>
-                                {!selectedFile.isDirectory && selectedInfo && (
-                                    <>
-                                        <div><Text type="secondary">扩展名：</Text>{selectedInfo.ext || '-'}</div>
-                                        <div><Text type="secondary">大小：</Text>{formatFileSize(selectedInfo.size)}</div>
-                                    </>
-                                )}
-                                {selectedFile.isDirectory && selectedInfo && (
-                                    <div><Text type="secondary">子项数量：</Text>{selectedInfo.childrenCount ?? 0}</div>
-                                )}
-                                {selectedInfo && (
-                                    <>
-                                        <div><Text type="secondary">创建日期：</Text>{formatDate(selectedInfo.ctimeMs)}</div>
-                                        <div><Text type="secondary">修改日期：</Text>{formatDate(selectedInfo.mtimeMs)}</div>
-                                        <div><Text type="secondary">访问日期：</Text>{formatDate(selectedInfo.atimeMs)}</div>
-                                    </>
-                                )}
-                            </div>
-                        ) : (
-                            <div style={{color: '#999'}}>请选择一个文件或目录查看信息</div>
-                        )}
-                    </div>
+                    <ToolWindowsPane />
                 </Splitter.Panel>
             </Splitter>
         </ConfigProvider>
+    );
+};
+
+export const App: React.FC = () => {
+    console.log('App 组件开始渲染');
+    return (
+        <AppProvider>
+            <AppContent />
+        </AppProvider>
     );
 };
