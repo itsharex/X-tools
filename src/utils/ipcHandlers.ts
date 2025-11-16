@@ -1,5 +1,5 @@
 import {ipcMain, dialog} from 'electron';
-import {getFileTree, getFileInfo} from './fileUtils';
+import {getFileTree, getFileInfo, getDirectoryChildren} from './fileUtils';
 import {loadConfig, saveConfig} from './configManager';
 import {Config} from "./config";
 
@@ -29,12 +29,22 @@ export function registerIpcHandlers() {
         saveConfig(config);
     });
 
-    // 处理获取文件树请求
+    // 处理获取文件树请求（懒加载模式）
     ipcMain.handle('getFileTree', async (event, dirPath: string) => {
         try {
-            return getFileTree(dirPath);
+            return getFileTree(dirPath, false); // 使用懒加载模式
         } catch (error) {
             console.error('获取文件树失败:', error);
+            throw error;
+        }
+    });
+
+    // 处理懒加载获取目录子节点请求
+    ipcMain.handle('getDirectoryChildren', async (event, dirPath: string) => {
+        try {
+            return getDirectoryChildren(dirPath);
+        } catch (error) {
+            console.error('获取目录子节点失败:', error);
             throw error;
         }
     });

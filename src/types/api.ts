@@ -28,8 +28,10 @@ export interface FileInfo {
 export interface ElectronAPI {
     // 打开文件夹选择对话框
     selectDirectory: () => Promise<string | null>;
-    // 获取文件树结构
+    // 获取文件树结构（懒加载模式）
     getFileTree: (path: string) => Promise<FileNode>;
+    // 懒加载获取目录子节点
+    getDirectoryChildren: (dirPath: string) => Promise<FileNode[]>;
     // 加载配置
     loadConfig: () => Promise<Config>;
     // 保存配置

@@ -28,6 +28,8 @@ const AppContent: React.FC = () => {
     const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
     const [selectedInfo, setSelectedInfo] = useState<FileInfo | null>(null);
     const [titleBarVisible, setTitleBarVisible] = useState(true);
+    const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
+    const [loadedKeys, setLoadedKeys] = useState<Set<string>>(new Set()); // 记录已加载的节点
 
     const {Text} = Typography;
 
@@ -72,12 +74,17 @@ const AppContent: React.FC = () => {
             })
             setCurrentFile(null)
             setConfig(updateFolderPath(config, currentFolder))
+            // 切换文件夹时清空展开和加载状态
+            setExpandedKeys([]);
+            setLoadedKeys(new Set());
         } else {
             console.log('currentFolder为空，清空相关状态');
             setFileTree(null)
             setSelectedKeys([]);
             setCurrentFile(null);
             setSelectedInfo(null);
+            setExpandedKeys([]);
+            setLoadedKeys(new Set());
         }
     }, [currentFolder]);
 
@@ -99,6 +106,44 @@ const AppContent: React.FC = () => {
             console.log('没有文件夹可加载或window.electronAPI不存在');
         }
     }
+
+    // 懒加载子节点
+    const onLoadData = async (node: TreeNodeWithMeta): Promise<void> => {
+        const { meta } = node;
+        if (!meta.isDirectory || loadedKeys.has(meta.id)) {
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const children = await window.electronAPI!.getDirectoryChildren(meta.path);
+            
+            // 更新文件树中的子节点
+            const updateNodeChildren = (node: FileNode): FileNode => {
+                if (node.id === meta.id) {
+                    return {
+                        ...node,
+                        children: children
+                    };
+                }
+                if (node.children) {
+                    return {
+                        ...node,
+                        children: node.children.map(updateNodeChildren)
+                    };
+                }
+                return node;
+            };
+
+            setFileTree(prevTree => prevTree ? updateNodeChildren(prevTree) : null);
+            setLoadedKeys(prev => new Set([...prev, meta.id]));
+        } catch (error) {
+            console.error('加载子节点失败:', error);
+            message.error('加载子节点失败，请重试');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // 处理选择文件夹
     const handleSelectDirectory = async () => {
@@ -124,7 +169,6 @@ const AppContent: React.FC = () => {
         }
     };
 
-    // 下拉菜单选项
     // 转换文件节点为Tree组件需要的数据格式
     const transformToTreeData = (node: FileNode): TreeNodeWithMeta => {
         const result: TreeNodeWithMeta = {
@@ -138,11 +182,22 @@ const AppContent: React.FC = () => {
             isLeaf: !node.isDirectory
         };
 
+        // 检查是否有未加载的子节点
+        const hasUnloadedChildren = (node as any).hasUnloadedChildren;
+        
         if (node.isDirectory && node.children && node.children.length > 0) {
             result.children = node.children.map(transformToTreeData);
+        } else if (hasUnloadedChildren) {
+            // 对于有未加载子节点的目录，不显示children，让antd显示可展开状态
+            // 这样用户点击时会触发onLoadData
         }
 
         return result;
+    };
+
+    // 处理树节点展开
+    const handleExpand: TreeProps<TreeNodeWithMeta>['onExpand'] = (expandedKeysValue, info) => {
+        setExpandedKeys(expandedKeysValue as string[]);
     };
 
     // 选择文件后读取内容
@@ -307,8 +362,10 @@ const AppContent: React.FC = () => {
                                 showLine
                                 switcherIcon={<DownOutlined/>}
                                 selectedKeys={selectedKeys}
+                                expandedKeys={expandedKeys}
+                                onExpand={handleExpand}
                                 onSelect={handleTreeSelect}
-                                defaultExpandAll={false}
+                                loadData={onLoadData}
                             />
                         ) : (
                             <div style={{textAlign: 'center', color: '#999', padding: 20}}>
