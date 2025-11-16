@@ -3,7 +3,7 @@ import { Button, Tooltip } from 'antd';
 import { ToolOutlined } from '@ant-design/icons';
 import { ToolWindow } from '../../types/toolWindow';
 import { toolWindowManager } from '../../utils/toolWindowManager';
-import { initializeSampleToolWindows } from './ToolWindowInitializer';
+import { initializeToolWindows } from '../scripts/initializeToolWindows';
 import './ToolWindowsPane.css';
 
 export const ToolWindowsPane: React.FC = () => {
@@ -12,7 +12,7 @@ export const ToolWindowsPane: React.FC = () => {
 
     // 初始化工具窗口
     useEffect(() => {
-        initializeSampleToolWindows();
+        // 初始化脚本会自动注册工具窗口，无需手动调用
         
         const updateWindows = () => {
             const windows = toolWindowManager.getAll();

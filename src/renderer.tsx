@@ -7,6 +7,9 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import { App } from './App';
 
+// 导入工具窗口初始化脚本（自动执行）
+import './scripts/initializeToolWindows';
+
 // 创建根节点并渲染应用
 const root = ReactDOM.createRoot(
   document.getElementById('root') || document.body
