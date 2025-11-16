@@ -6,6 +6,7 @@ import {
     SearchWindow, 
     PropertiesWindow 
 } from './SampleToolWindows';
+import { fileInfoToolWindow } from '../FileInfoToolWindow';
 import { 
     HistoryOutlined, 
     SearchOutlined, 
@@ -56,10 +57,12 @@ export const initializeSampleToolWindows = () => {
     toolWindowManager.register(fileHistoryWindow);
     toolWindowManager.register(searchWindow);
     toolWindowManager.register(propertiesWindow);
+    toolWindowManager.register(fileInfoToolWindow);
 
     return {
         fileHistoryWindow,
         searchWindow,
-        propertiesWindow
+        propertiesWindow,
+        fileInfoWindow: fileInfoToolWindow
     };
 };
