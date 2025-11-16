@@ -40,7 +40,7 @@ export function loadConfig(): Config {
 
 export function saveConfig(config: Config): void {
     ensureConfigDir();
-    console.log('save config to file', config)
+    // console.log('save config to file', config)
     try {
         fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), 'utf8');
     } catch (error) {

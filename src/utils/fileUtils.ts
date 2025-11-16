@@ -8,7 +8,7 @@ import { FileNode } from '../types';
  * @param deep 是否深度递归加载（默认false，只加载第一层）
  * @returns 文件树节点
  */
-export function getFileTree(dirPath: string, deep: boolean = false): FileNode {
+export function getFileTree(dirPath: string, deep = false): FileNode {
   const stats = fs.statSync(dirPath);
   const name = path.basename(dirPath);
   const node: FileNode = {
