@@ -88,6 +88,13 @@ const AppContent: React.FC = () => {
         }
     }, [currentFolder]);
 
+    // 同步红绿灯显示状态与标题栏显示状态
+    useEffect(() => {
+        if (window.electronAPI?.setTrafficLightPosition) {
+            window.electronAPI.setTrafficLightPosition(titleBarVisible);
+        }
+    }, [titleBarVisible]);
+
     async function loadFolderTree() {
         console.log('loading folder tree, currentFolder:', currentFolder);
         if (currentFolder && window.electronAPI) {

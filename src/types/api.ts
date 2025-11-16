@@ -38,6 +38,8 @@ export interface ElectronAPI {
     saveConfig: (config:Config) => Promise<void>;
     // 获取文件/目录基本信息
     getFileInfo: (filePath: string) => Promise<FileInfo>;
+    // 控制红绿灯的显示/隐藏
+    setTrafficLightPosition: (visible: boolean) => Promise<void>;
 }
 
 // 扩展Window接口

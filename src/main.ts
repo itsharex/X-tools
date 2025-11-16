@@ -45,6 +45,14 @@ const createWindow = () => {
         ...(process.platform !== 'darwin' ? {titleBarOverlay: true} : {})
     });
 
+    // 保存窗口引用以便后续控制
+    global.mainWindow = mainWindow;
+
+    // 确保窗口完全显示后再设置红绿灯位置
+    mainWindow.once('ready-to-show', () => {
+        console.log('窗口已准备就绪，可以设置红绿灯位置');
+    });
+
     // and load the index.html of the app.
     if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
         mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);

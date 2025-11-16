@@ -17,6 +17,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getDirectoryChildren: (dirPath: string) => ipcRenderer.invoke('getDirectoryChildren', dirPath) as Promise<FileNode[]>,
      // 获取文件/目录基本信息
     getFileInfo: (filePath: string) => ipcRenderer.invoke('getFileInfo', filePath),
+    // 控制红绿灯的显示/隐藏
+    setTrafficLightPosition: (visible: boolean) => ipcRenderer.invoke('setTrafficLightPosition', visible),
 });
 
 // 导入API类型定义
