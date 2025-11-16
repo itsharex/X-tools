@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Button, Tooltip } from 'antd';
-import { ToolOutlined } from '@ant-design/icons';
-import { ToolWindow } from '../../types/toolWindow';
-import { toolWindowManager } from './toolWindowManager';
+import React, {useState, useEffect} from 'react';
+import {Button, Tooltip} from 'antd';
+import {ToolOutlined} from '@ant-design/icons';
+import {ToolWindow} from '../../types/toolWindow';
+import {toolWindowManager} from './toolWindowManager';
 import './ToolWindowsPane.css';
 
 export const ToolWindowsPane: React.FC = () => {
@@ -11,23 +11,13 @@ export const ToolWindowsPane: React.FC = () => {
 
     // 初始化工具窗口
     useEffect(() => {
-        // 初始化脚本会自动注册工具窗口，无需手动调用
-        
-        const updateWindows = () => {
-            const windows = toolWindowManager.getAll();
-            setAvailableWindows(windows);
-            
-            // 如果没有活跃窗口且有可用窗口，自动显示第一个窗口
-            if (!activeWindowId && windows.length > 0) {
-                setActiveWindowId(windows[0].id);
-            }
-        };
+        const windows = toolWindowManager.getAll();
+        setAvailableWindows(windows);
 
-        updateWindows();
-        
-        // 定期检查工具窗口变化
-        const interval = setInterval(updateWindows, 100);
-        return () => clearInterval(interval);
+        // 如果没有活跃窗口且有可用窗口，自动显示第一个窗口
+        if (!activeWindowId && windows.length > 0) {
+            setActiveWindowId(windows[0].id);
+        }
     }, [activeWindowId]);
 
     // 切换工具窗口
@@ -42,8 +32,8 @@ export const ToolWindowsPane: React.FC = () => {
         return (
             <div className="tool-windows-pane empty">
                 <div className="empty-state">
-                    <ToolOutlined style={{ fontSize: 24, color: '#ccc' }} />
-                    <div style={{ color: '#999', marginTop: 8 }}>暂无工具窗口</div>
+                    <ToolOutlined style={{fontSize: 24, color: '#ccc'}}/>
+                    <div style={{color: '#999', marginTop: 8}}>暂无工具窗口</div>
                 </div>
             </div>
         );
@@ -65,7 +55,7 @@ export const ToolWindowsPane: React.FC = () => {
                             size="small"
                             className={`toolbar-button ${activeWindowId === window.id ? 'active' : ''}`}
                             onClick={() => toggleWindow(window.id)}
-                            icon={window.icon || <ToolOutlined />}
+                            icon={window.icon || <ToolOutlined/>}
                         />
                     </Tooltip>
                 ))}
