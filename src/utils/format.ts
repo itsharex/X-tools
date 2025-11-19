@@ -1,71 +1,77 @@
-export function formatFileSize(size: number): string {
-  if (size < 1024) {
-    return `${size} B`;
-  }
-  if (size < 1024 * 1024) {
-    return `${(size / 1024).toFixed(1)} KB`;
-  }
-  if (size < 1024 * 1024 * 1024) {
-    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
-  }
-  return `${(size / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+/**
+ * 格式化文件大小
+ */
+export function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-export function formatDate(ms: number): string {
-  try {
-    return new Date(ms).toLocaleString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false
-    });
-  } catch {
-    return '-';
-  }
+/**
+ * 格式化日期
+ */
+export function formatDate(timestamp: number): string {
+  return new Date(timestamp).toLocaleString();
 }
 
 /**
  * 计算文本字数（支持中英文）
- * 中文字符按1个字计算，英文单词按空格分隔计算
- * @param text 要计算字数的文本
- * @returns 字数统计结果
+ * @param text 要计算的文本
+ * @returns 字数统计对象
  */
-export function countText(text: string): number {
-  if (!text) return 0;
-  // 移除空白字符后计算字数，中文字符按1个字计算，英文单词按空格分隔计算
-  const trimmedText = text.trim();
-  if (!trimmedText) return 0;
+export function countText(text: string): { chars: number; words: number; chineseChars: number } {
+  if (!text) {
+    return { chars: 0, words: 0, chineseChars: 0 };
+  }
   
-  // 统计中文字符数
-  const chineseChars = (trimmedText.match(/[\u4e00-\u9fa5]/g) || []).length;
-  // 统计英文单词数（非中文字符的单词）
-  const nonChineseText = trimmedText.replace(/[\u4e00-\u9fa5]/g, ' ');
-  const englishWords = nonChineseText.trim() ? nonChineseText.trim().split(/\s+/).filter(word => word.length > 0).length : 0;
+  // 去除空白字符后的字符数
+  const chars = text.replace(/\s/g, '').length;
   
-  return chineseChars + englishWords;
+  // 匹配中文字符
+  const chineseChars = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
+  
+  // 匹配英文单词（由字母组成的连续序列）
+  const words = (text.match(/[a-zA-Z]+/g) || []).length;
+  
+  return { chars, words, chineseChars };
 }
 
 /**
  * 获取当前选中的文本
- * @returns 选中的文本内容
  */
 export function getSelectedText(): string {
-  const selection = window.getSelection();
-  return selection ? selection.toString() : '';
+  return window.getSelection()?.toString() || '';
 }
 
 /**
  * 截断文本并添加省略号
- * @param text 原始文本
- * @param maxLength 最大长度
- * @returns 截断后的文本
  */
 export function truncateText(text: string, maxLength: number): string {
-  if (!text || text.length <= maxLength) {
-    return text;
-  }
+  if (text.length <= maxLength) return text;
   return text.substring(0, maxLength) + '...';
+}
+
+/**
+ * 读取文本文件内容并统计字符数
+ * @param filePath 文件路径
+ * @returns Promise<{ chars: number; words: number; chineseChars: number }>
+ */
+export async function getFileTextStats(filePath: string): Promise<{ chars: number; words: number; chineseChars: number }> {
+  try {
+    if (window.electronAPI && window.electronAPI.readFile) {
+      const content = await window.electronAPI.readFile(filePath);
+      return countText(content);
+    } else {
+      // 浏览器环境下的模拟
+      console.warn('浏览器环境下无法读取文件内容');
+      return { chars: 0, words: 0, chineseChars: 0 };
+    }
+  } catch (error) {
+    console.error('读取文件内容失败:', error);
+    return { chars: 0, words: 0, chineseChars: 0 };
+  }
 }
