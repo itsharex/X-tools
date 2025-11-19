@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Spin, Empty, Menu, Layout, Typography } from 'antd';
-import { FileTextOutlined, MenuOutlined } from '@ant-design/icons';
+import { Card, Spin, Empty, Menu, Layout, Typography, Button, Space } from 'antd';
+import { FileTextOutlined, MenuOutlined, CodeOutlined, EyeOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
-import { parseMarkdown, flattenOutline, scrollToHeading, OutlineItem } from '../../utils/markdown';
+import { parseMarkdown, OutlineItem } from '../../utils/markdown';
 import 'highlight.js/styles/github.css';
 import './MarkdownViewer.css';
 
@@ -20,6 +20,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({ filePath, fileNa
   const [html, setHtml] = useState('');
   const [outline, setOutline] = useState<OutlineItem[]>([]);
   const [outlineVisible, setOutlineVisible] = useState(true);
+  const [viewMode, setViewMode] = useState<'rendered' | 'source'>('rendered');
   const [error, setError] = useState<string | null>(null);
 
   // 加载 Markdown 文件内容
@@ -154,7 +155,6 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({ filePath, fileNa
     }));
   };
 
-  const flatOutline = flattenOutline(outline);
   const menuItems = generateMenuItems(outline);
 
   if (loading) {
@@ -207,27 +207,49 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({ filePath, fileNa
           <Title level={5} style={{ margin: 0 }}>{fileName}</Title>
         </div>
         
-        {outline.length > 0 && (
-          <div
-            style={{ 
-              cursor: 'pointer', 
-              padding: '4px 8px',
-              borderRadius: 4,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4
-            }}
-            onClick={() => setOutlineVisible(!outlineVisible)}
-          >
-            <MenuOutlined />
-            <span>大纲</span>
-          </div>
-        )}
+        <Space>
+          {/* 视图模式切换按钮 */}
+          <Button.Group>
+            <Button
+              type={viewMode === 'rendered' ? 'primary' : 'default'}
+              icon={<EyeOutlined />}
+              onClick={() => setViewMode('rendered')}
+              size="small"
+            >
+              预览
+            </Button>
+            <Button
+              type={viewMode === 'source' ? 'primary' : 'default'}
+              icon={<CodeOutlined />}
+              onClick={() => setViewMode('source')}
+              size="small"
+            >
+              原文
+            </Button>
+          </Button.Group>
+          
+          {outline.length > 0 && viewMode === 'rendered' && (
+            <div
+              style={{ 
+                cursor: 'pointer', 
+                padding: '4px 8px',
+                borderRadius: 4,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4
+              }}
+              onClick={() => setOutlineVisible(!outlineVisible)}
+            >
+              <MenuOutlined />
+              <span>大纲</span>
+            </div>
+          )}
+        </Space>
       </div>
 
       <Layout>
-        {/* 大纲侧边栏 */}
-        {outlineVisible && outline.length > 0 && (
+        {/* 大纲侧边栏 - 只在渲染视图下显示 */}
+        {outlineVisible && outline.length > 0 && viewMode === 'rendered' && (
           <Sider 
             width={250} 
             style={{ 
@@ -251,17 +273,23 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({ filePath, fileNa
           </Sider>
         )}
 
-        {/* Markdown 内容区域 */}
+        {/* 内容区域 */}
         <Content style={{ 
           padding: '16px 24px',
           overflow: 'auto',
           background: '#fff'
         }}>
-          <div 
-            className="markdown-content"
-            dangerouslySetInnerHTML={{ __html: html }}
-            onClick={handleLinkClick}
-          />
+          {viewMode === 'rendered' ? (
+            <div 
+              className="markdown-content"
+              dangerouslySetInnerHTML={{ __html: html }}
+              onClick={handleLinkClick}
+            />
+          ) : (
+            <div className="markdown-source">
+              <pre><code>{content}</code></pre>
+            </div>
+          )}
         </Content>
       </Layout>
     </Layout>

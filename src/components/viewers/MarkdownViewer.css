@@ -6,6 +6,33 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
+/* Markdown 原文样式 */
+.markdown-source {
+  max-width: 100%;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.markdown-source pre {
+  margin: 0;
+  padding: 16px;
+  background: #f6f8fa;
+  border-radius: 6px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.markdown-source code {
+  background: transparent;
+  padding: 0;
+  border: none;
+  font-family: inherit;
+  font-size: inherit;
+  color: #24292e;
+}
+
 /* 标题样式 */
 .markdown-content h1,
 .markdown-content h2,
@@ -176,26 +203,31 @@
 }
 
 /* 滚动条样式 */
-.markdown-content::-webkit-scrollbar {
+.markdown-content::-webkit-scrollbar,
+.markdown-source::-webkit-scrollbar {
   width: 6px;
 }
 
-.markdown-content::-webkit-scrollbar-track {
+.markdown-content::-webkit-scrollbar-track,
+.markdown-source::-webkit-scrollbar-track {
   background: #f1f1f1;
 }
 
-.markdown-content::-webkit-scrollbar-thumb {
+.markdown-content::-webkit-scrollbar-thumb,
+.markdown-source::-webkit-scrollbar-thumb {
   background: #c1c1c1;
   border-radius: 3px;
 }
 
-.markdown-content::-webkit-scrollbar-thumb:hover {
+.markdown-content::-webkit-scrollbar-thumb:hover,
+.markdown-source::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
 }
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .markdown-content {
+  .markdown-content,
+  .markdown-source {
     padding: 12px;
   }
   
@@ -209,5 +241,13 @@
   
   .markdown-content h3 {
     font-size: 1.1em;
+  }
+  
+  .markdown-source {
+    font-size: 12px;
+  }
+  
+  .markdown-source pre {
+    padding: 12px;
   }
 }

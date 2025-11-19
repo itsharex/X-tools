@@ -1,6 +1,5 @@
 import { marked } from 'marked';
 import hljs from 'highlight.js';
-import type { RendererFunction } from 'marked';
 
 // 大纲项接口
 export interface OutlineItem {
@@ -41,7 +40,7 @@ export function parseMarkdown(markdown: string): MarkdownParseResult {
   const stack: OutlineItem[] = [];
 
   // 重写标题渲染方法
-  renderer.heading = function(this: marked.Renderer, { tokens, depth }: { tokens: any[], depth: number }) {
+  renderer.heading = function(this: typeof marked.Renderer, { tokens, depth }: { tokens: any[], depth: number }) {
     const text = tokens.map((token: any) => token.text).join('');
     const level = depth;
     const id = generateAnchorId(text);
@@ -69,7 +68,7 @@ export function parseMarkdown(markdown: string): MarkdownParseResult {
   };
 
   // 重写代码块渲染方法以支持语法高亮
-  renderer.code = function(this: marked.Renderer, { text, lang }: { text: string, lang?: string }) {
+  renderer.code = function(this: typeof marked.Renderer, { text, lang }: { text: string, lang?: string }) {
     if (lang && hljs.getLanguage(lang)) {
       try {
         const highlighted = hljs.highlight(text, { language: lang }).value;
