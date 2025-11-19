@@ -3,7 +3,7 @@ import {Button, ConfigProvider, Dropdown, Flex, message, Splitter, Tree} from "a
 import {DeleteOutlined, DownOutlined, EyeInvisibleOutlined, FolderOpenOutlined, PlusOutlined} from '@ant-design/icons';
 import type {DataNode, TreeProps} from 'antd/es/tree';
 import {FileNode, RecentFolder} from './types';
-import {FilePreview} from './components/FilePreview';
+import {FileViewer} from './components/viewers/FileViewer';
 import {ToolWindowsPane} from './components/windows/ToolWindowsPane';
 import {AppProvider, useAppContext} from './contexts/AppContext';
 import {truncateFolderName} from './utils/uiUtils';
@@ -369,7 +369,7 @@ const AppContent: React.FC = () => {
                     {currentFile ? (
                         <div style={{height: '100%', padding: 0, background: '#f7f7f7'}}>
                             <div style={{height: '100%'}}>
-                                <FilePreview
+                                <FileViewer
                                     filePath={currentFile.path}
                                     fileName={currentFile.name}
                                 />

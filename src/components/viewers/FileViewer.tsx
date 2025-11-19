@@ -1,5 +1,5 @@
 import React from 'react';
-import { detectFileType, toFileUrl } from '../utils/fileType';
+import { detectFileType, toFileUrl } from '../../utils/fileType';
 import { ImageViewer } from './ImageViewer';
 import { VideoViewer } from './VideoViewer';
 import { PdfViewer } from './PdfViewer';
@@ -9,7 +9,7 @@ interface FilePreviewProps {
   fileName: string;
 }
 
-export const FilePreview: React.FC<FilePreviewProps> = ({ filePath, fileName }) => {
+export const FileViewer: React.FC<FilePreviewProps> = ({ filePath, fileName }) => {
   const type = detectFileType(fileName);
 
   if (type === 'image') {
