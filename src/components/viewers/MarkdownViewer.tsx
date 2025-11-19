@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Spin, Empty, Menu, Layout, Typography, Button, Space } from 'antd';
+import { Card, Spin, Empty, Menu, Layout, Typography, Button, Space, Splitter } from 'antd';
 import { FileTextOutlined, MenuOutlined, CodeOutlined, EyeOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { parseMarkdown, OutlineItem } from '../../utils/markdown';
 import 'highlight.js/styles/github.css';
 import './MarkdownViewer.css';
 
-const { Sider, Content } = Layout;
+const { Content } = Layout;
 const { Title } = Typography;
 
 interface MarkdownViewerProps {
@@ -266,49 +266,61 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({ filePath, fileNa
       </div>
 
       <Layout>
-        {/* 大纲侧边栏 - 只在渲染视图下显示 */}
-        {outlineVisible && outline.length > 0 && viewMode === 'rendered' && (
-          <Sider 
-            width={250} 
-            style={{ 
-              background: '#fff',
-              borderRight: '1px solid #f0f0f0',
-              overflow: 'auto'
-            }}
-          >
-            <Card 
-              title="文档大纲" 
-              size="small" 
-              style={{ margin: 8 }}
-              bodyStyle={{ padding: 0 }}
+        {outlineVisible && outline.length > 0 && viewMode === 'rendered' ? (
+          <Splitter style={{ height: '100%' }}>
+            <Splitter.Panel 
+              defaultSize={250} 
+              min={150} 
+              max={500}
+              style={{ background: '#fff' }}
             >
-              <Menu
-                mode="inline"
-                items={menuItems}
-                style={{ border: 'none' }}
+              <Card 
+                title="文档大纲" 
+                size="small" 
+                style={{ margin: 8, height: 'calc(100% - 16px)' }}
+                bodyStyle={{ padding: 0, overflow: 'auto', maxHeight: 'calc(100% - 32px)' }}
+              >
+                <Menu
+                  mode="inline"
+                  items={menuItems}
+                  style={{ border: 'none' }}
+                />
+              </Card>
+            </Splitter.Panel>
+            
+            <Splitter.Panel style={{ background: '#fff' }}>
+              <Content style={{ 
+                padding: '16px 24px',
+                overflow: 'auto',
+                background: '#fff'
+              }}>
+                <div 
+                  className="markdown-content"
+                  dangerouslySetInnerHTML={{ __html: html }}
+                  onClick={handleLinkClick}
+                />
+              </Content>
+            </Splitter.Panel>
+          </Splitter>
+        ) : (
+          <Content style={{ 
+            padding: '16px 24px',
+            overflow: 'auto',
+            background: '#fff'
+          }}>
+            {viewMode === 'rendered' ? (
+              <div 
+                className="markdown-content"
+                dangerouslySetInnerHTML={{ __html: html }}
+                onClick={handleLinkClick}
               />
-            </Card>
-          </Sider>
+            ) : (
+              <div className="markdown-source">
+                <pre><code>{content}</code></pre>
+              </div>
+            )}
+          </Content>
         )}
-
-        {/* 内容区域 */}
-        <Content style={{ 
-          padding: '16px 24px',
-          overflow: 'auto',
-          background: '#fff'
-        }}>
-          {viewMode === 'rendered' ? (
-            <div 
-              className="markdown-content"
-              dangerouslySetInnerHTML={{ __html: html }}
-              onClick={handleLinkClick}
-            />
-          ) : (
-            <div className="markdown-source">
-              <pre><code>{content}</code></pre>
-            </div>
-          )}
-        </Content>
       </Layout>
     </Layout>
   );
