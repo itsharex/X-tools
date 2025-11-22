@@ -274,3 +274,7 @@
     text-decoration: none;
 }
 
+/* CodeMirror 内容区域样式 */
+.markdown-source .cm-editor .cm-content {
+    padding: 32px;
+}

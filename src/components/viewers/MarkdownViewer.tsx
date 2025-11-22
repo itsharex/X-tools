@@ -33,6 +33,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({filePath, fileNam
     });
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const lastSavedContentRef = useRef<string>('');
+    const editorRef = useRef<any>(null);
 
     // 字体大小调整函数
     const increaseFontSize = () => {
@@ -189,36 +190,67 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({filePath, fileNam
     };
 
     // 处理大纲点击
-    const handleOutlineClick = (item: OutlineItem) => {
-        // 增加延迟确保 DOM 已经完全渲染
-        setTimeout(() => {
-            let element = document.getElementById(item.id);
+  const handleOutlineClick = (item: OutlineItem) => {
+    console.log(`跳转到大纲项: ${item.title}, 视图模式: ${viewMode}`);
+    
+    // 增加延迟确保 DOM 已经完全渲染
+    setTimeout(() => {
+      // 预览模式下的跳转逻辑
+      if (viewMode === 'rendered') {
+        const element = document.getElementById(item.id);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          // 添加临时高亮效果
+          element.style.backgroundColor = '#fff3cd';
+          setTimeout(() => {
+            element.style.backgroundColor = '';
+          }, 1500);
+        } else {
+          console.warn(`未找到预览元素: #${item.id}`);
+        }
+        return;
+      }
 
-            // 如果没有，尝试获取编辑模式下的元素
-            if (!element) {
-                const all = document.querySelectorAll('.cm-scroller .ͼ7');
-                const targetList = Array.from(all).filter(el => el.textContent?.trim() === item.title.trim());
-                const idLast = Number(item.id.split('-').pop()); // id 的最后一个元素转数字
-                const i = targetList.length == 1 ? 0 : isNaN(idLast) ? 0 : Number(idLast);
-                // console.log('filter:', item, targetList, i);
-                element = targetList[i] as HTMLElement;
-                element = element.parentElement;
+      // 原文模式下使用 CodeMirror 6 API 进行跳转
+      if (viewMode === 'source' && editorRef.current) {
+        try {
+          // 获取 CodeMirror 实例
+          const editor = editorRef.current;
+          const view = editor.view;
+          const doc = view.state.doc;
+          
+          // 逐行查找标题文本
+          let targetLine = -1;
+          for (let line = 0; line < doc.lines; line++) {
+            const lineText = doc.line(line + 1).text;
+            // 检查是否是标题行，并且文本内容匹配
+            if ((lineText.startsWith('#') || lineText.startsWith('##') || lineText.startsWith('###') || 
+                 lineText.startsWith('####') || lineText.startsWith('#####') || lineText.startsWith('######')) &&
+                lineText.replace(/^#+\s*/, '').trim() === item.title.trim()) {
+              targetLine = line;
+              break;
             }
-
-            if (!element) return;
-
-            // console.log('element', element);
-            element.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
+          }
+          
+          if (targetLine >= 0) {
+            // 计算目标位置
+            const lineObj = doc.line(targetLine + 1);
+            const targetPos = lineObj.from;
+            
+            // 使用 CodeMirror 6 API 进行跳转和滚动
+            view.dispatch({
+              selection: { anchor: targetPos },
+              effects: EditorView.scrollIntoView(targetPos, { y: 'start' })
             });
-            // 添加视觉反馈
-            element.style.backgroundColor = '#fff3cd';
-            setTimeout(() => {
-                element.style.backgroundColor = '';
-            }, 1500);
-        }, 300);
-    };
+          } else {
+            console.warn(`未找到匹配的标题行: ${item.title}`);
+          }
+        } catch (error) {
+          console.error('CodeMirror 跳转失败:', error);
+        }
+      }
+    }, 300);
+  };
 
     // 生成大纲菜单项 - 使用扁平化结构避免事件冒泡
     const generateMenuItems = (items: OutlineItem[]): MenuProps['items'] => {
@@ -369,6 +401,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({filePath, fileNam
                                     style={{height: '100%', fontSize: `${fontSize}px`}}
                                 >
                                     <CodeMirror
+                                        ref={editorRef}
                                         value={content}
                                         height="100%"
                                         theme="light"
