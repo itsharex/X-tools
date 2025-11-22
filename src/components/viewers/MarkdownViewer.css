@@ -272,7 +272,5 @@
 /* 移除 CodeMirror 中标题的下划线 */
 .markdown-source .cm-content .ͼ7{
     text-decoration: none;
-    padding-top: 8px;
-    padding-bottom: 8px;
 }
 

@@ -202,6 +202,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({filePath, fileNam
                 const i = targetList.length == 1 ? 0 : isNaN(idLast) ? 0 : Number(idLast);
                 // console.log('filter:', item, targetList, i);
                 element = targetList[i] as HTMLElement;
+                element = element.parentElement;
             }
 
             if (!element) return;
