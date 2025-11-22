@@ -292,3 +292,8 @@
         background-color: transparent;
     }
 }
+
+/*如果这个显示，页面布局就乱了，变得很长，有滚动条*/
+.katex .katex-mathml {
+    display: none;
+}
