@@ -278,3 +278,17 @@
 .markdown-source .cm-editor .cm-content {
     padding: 32px;
 }
+
+/* 大纲高亮动画效果 */
+.outline-highlight-animation {
+    animation: outline-highlight-fade 1.5s ease-out;
+}
+
+@keyframes outline-highlight-fade {
+    0% {
+        background-color: orange;
+    }
+    100% {
+        background-color: transparent;
+    }
+}

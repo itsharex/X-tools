@@ -1,8 +1,8 @@
-import React, {useState, useEffect, useRef} from 'react';
-import {Card, Spin, Empty, Menu, Layout, Typography, Button, Space, Splitter, Flex, message} from 'antd';
-import {FileTextOutlined, CodeOutlined, EyeOutlined, PlusOutlined, MinusOutlined} from '@ant-design/icons';
+import React, {useEffect, useRef, useState} from 'react';
 import type {MenuProps} from 'antd';
-import {parseMarkdown, OutlineItem} from '../../utils/markdown';
+import {Button, Empty, Flex, Menu, message, Space, Spin, Splitter, Typography} from 'antd';
+import {CodeOutlined, EyeOutlined, FileTextOutlined, MinusOutlined, PlusOutlined} from '@ant-design/icons';
+import {OutlineItem, parseMarkdown} from '../../utils/markdown';
 import {storage, STORAGE_KEYS} from '../../utils/uiUtils';
 import 'highlight.js/styles/github.css';
 import './MarkdownViewer.css';
@@ -190,67 +190,103 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({filePath, fileNam
     };
 
     // 处理大纲点击
-  const handleOutlineClick = (item: OutlineItem) => {
-    console.log(`跳转到大纲项: ${item.title}, 视图模式: ${viewMode}`);
-    
-    // 增加延迟确保 DOM 已经完全渲染
-    setTimeout(() => {
-      // 预览模式下的跳转逻辑
-      if (viewMode === 'rendered') {
-        const element = document.getElementById(item.id);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          // 添加临时高亮效果
-          element.style.backgroundColor = '#fff3cd';
-          setTimeout(() => {
-            element.style.backgroundColor = '';
-          }, 1500);
-        } else {
-          console.warn(`未找到预览元素: #${item.id}`);
-        }
-        return;
-      }
+    const handleOutlineClick = (item: OutlineItem) => {
+        console.log(`跳转到大纲项: ${item.title}, 视图模式: ${viewMode}`);
 
-      // 原文模式下使用 CodeMirror 6 API 进行跳转
-      if (viewMode === 'source' && editorRef.current) {
-        try {
-          // 获取 CodeMirror 实例
-          const editor = editorRef.current;
-          const view = editor.view;
-          const doc = view.state.doc;
-          
-          // 逐行查找标题文本
-          let targetLine = -1;
-          for (let line = 0; line < doc.lines; line++) {
-            const lineText = doc.line(line + 1).text;
-            // 检查是否是标题行，并且文本内容匹配
-            if ((lineText.startsWith('#') || lineText.startsWith('##') || lineText.startsWith('###') || 
-                 lineText.startsWith('####') || lineText.startsWith('#####') || lineText.startsWith('######')) &&
-                lineText.replace(/^#+\s*/, '').trim() === item.title.trim()) {
-              targetLine = line;
-              break;
+        // 增加延迟确保 DOM 已经完全渲染
+        setTimeout(() => {
+            // 预览模式下的跳转逻辑
+            if (viewMode === 'rendered') {
+                const element = document.getElementById(item.id);
+                if (element) {
+                    element.scrollIntoView({behavior: 'smooth', block: 'start'});
+                    // 添加临时高亮效果
+                    element.classList.add('outline-highlight-animation');
+                    setTimeout(() => {
+                        element.classList.remove('outline-highlight-animation');
+                    }, 1500);
+                } else {
+                    console.warn(`未找到预览元素: #${item.id}`);
+                }
+                return;
             }
-          }
-          
-          if (targetLine >= 0) {
-            // 计算目标位置
-            const lineObj = doc.line(targetLine + 1);
-            const targetPos = lineObj.from;
-            
-            // 使用 CodeMirror 6 API 进行跳转和滚动
-            view.dispatch({
-              selection: { anchor: targetPos },
-              effects: EditorView.scrollIntoView(targetPos, { y: 'start' })
-            });
-          } else {
-            console.warn(`未找到匹配的标题行: ${item.title}`);
-          }
-        } catch (error) {
-          console.error('CodeMirror 跳转失败:', error);
-        }
-      }
-    }, 300);
-  };
+
+            // 原文模式下使用 CodeMirror 6 API 进行跳转和高亮
+            if (viewMode === 'source' && editorRef.current) {
+                try {
+                    // 获取 CodeMirror 实例
+                    const editor = editorRef.current;
+                    const view = editor.view;
+                    const doc = view.state.doc;
+
+                    // 逐行查找标题文本
+                    let targetLine = -1;
+                    for (let line = 0; line < doc.lines; line++) {
+                        const lineText = doc.line(line + 1).text;
+                        // 检查是否是标题行，并且文本内容匹配
+                        if ((lineText.startsWith('#') || lineText.startsWith('##') || lineText.startsWith('###') ||
+                                lineText.startsWith('####') || lineText.startsWith('#####') || lineText.startsWith('######')) &&
+                            lineText.replace(/^#+\s*/, '').trim() === item.title.trim()) {
+                            targetLine = line;
+                            break;
+                        }
+                    }
+
+                    if (targetLine >= 0) {
+                        // 计算目标位置
+                        const lineObj = doc.line(targetLine + 1);
+                        const targetPos = lineObj.from;
+
+                        // 应用滚动到目标位置
+                        view.dispatch({
+                            selection: {anchor: targetPos},
+                            effects: [
+                                EditorView.scrollIntoView(targetPos, {y: 'start'})
+                            ]
+                        });
+
+                        // 优化高亮实现，使用更精确的DOM选择方式
+                        setTimeout(() => {
+                            try {
+                                // 使用位置信息查找对应的DOM元素，更准确可靠
+                                const rect = view.coordsAtPos(targetPos);
+                                if (rect) {
+                                    // 找到对应行的DOM元素
+                                    const lineWidget = document.elementFromPoint(rect.left + 5, rect.top + 5);
+                                    if (lineWidget) {
+                                        // 向上查找包含整个行的父元素
+                                        let lineElement = lineWidget;
+                                        while (lineElement && !lineElement.classList.contains('cm-line') && lineElement !== view.dom) {
+                                            lineElement = lineElement.parentElement!;
+                                        }
+
+                                        if (lineElement && lineElement.classList.contains('cm-line')) {
+                                            const element = lineElement as HTMLElement;
+                                            // 应用高亮样式
+                                            element.classList.add('outline-highlight-animation');
+
+                                            // 1.5秒后移除高亮
+                                            setTimeout(() => {
+                                                if (element.isConnected) { // 确保元素仍然在DOM中
+                                                    element.classList.remove('outline-highlight-animation');
+                                                }
+                                            }, 1500);
+                                        }
+                                    }
+                                }
+                            } catch (error) {
+                                console.warn('高亮应用失败:', error);
+                            }
+                        }, 200); // 增加延迟时间，确保滚动和渲染完成后再添加高亮
+                    } else {
+                        console.warn(`未找到匹配的标题行: ${item.title}`);
+                    }
+                } catch (error) {
+                    console.error('CodeMirror 跳转失败:', error);
+                }
+            }
+        }, 300);
+    };
 
     // 生成大纲菜单项 - 使用扁平化结构避免事件冒泡
     const generateMenuItems = (items: OutlineItem[]): MenuProps['items'] => {
@@ -413,7 +449,13 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({filePath, fileNam
                                                 }
                                             }),
                                             EditorView.lineWrapping,
-                                            EditorState.readOnly.of(false)
+                                            EditorState.readOnly.of(false),
+                                            EditorView.theme({
+                                                '& .outline-highlight': {
+                                                    backgroundColor: '#fff3cd',
+                                                    transition: 'background-color 1.5s ease-out'
+                                                }
+                                            })
                                         ]}
                                         onChange={(value) => {
                                             handleEditorChange(value);
