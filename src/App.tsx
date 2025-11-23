@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {Button, ConfigProvider, Dropdown, Flex, message, Splitter, Tree} from "antd";
-import {DeleteOutlined, DownOutlined, EyeInvisibleOutlined, FolderOpenOutlined, PlusOutlined} from '@ant-design/icons';
+import {DeleteOutlined, DownOutlined, EyeInvisibleOutlined, FolderOpenOutlined, PlusOutlined, SyncOutlined} from '@ant-design/icons';
 import type {DataNode, TreeProps} from 'antd/es/tree';
 import {FileNode, RecentFolder} from './types';
 import {FileViewer} from './components/viewers/FileViewer';
@@ -317,7 +317,17 @@ const AppContent: React.FC = () => {
                             {currentFile ? currentFile.name : ''}
                         </div>
                     </div>
-                    <div style={{flex: '0 0 auto', paddingLeft: 16, paddingRight: 16, display: 'flex', alignItems: 'center'}}>
+                    <div style={{flex: '0 0 auto', paddingLeft: 16, paddingRight: 16, display: 'flex', alignItems: 'center', gap: 8}}>
+                        <Button
+                            type="text"
+                            icon={<SyncOutlined/>}
+                            title="重新加载界面"
+                            onClick={() => {
+                                // 重新加载界面
+                                window.location.reload();
+                            }}
+                            style={{padding: 0, width: 24, height: 24, borderRadius: 4}}
+                        />
                         <Button
                             type="text"
                             icon={<EyeInvisibleOutlined/>}
