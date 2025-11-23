@@ -164,7 +164,33 @@ const AppContent: React.FC = () => {
     const transformToTreeData = (node: FileNode): TreeNodeWithMeta => {
         const result: TreeNodeWithMeta = {
             title: (
-                <div className={'one-line'} title={node.name}>
+                <div
+                    className={'one-line'}
+                    title={node.name}
+                    onClick={(e) => {
+                        // 只有文件夹才需要处理点击展开/折叠
+                        if (node.isDirectory) {
+                            // 检查节点是否已展开
+                            const isExpanded = expandedKeys.includes(node.id);
+                            if (isExpanded) {
+                                // 如果已展开，则折叠
+                                setExpandedKeys(expandedKeys.filter(key => key !== node.id));
+                            } else {
+                                // 如果未展开，则展开
+                                setExpandedKeys([...expandedKeys, node.id]);
+                                // 如果是未加载的子节点，需要先加载数据
+                                if (!(node as any).hasUnloadedChildren && !node.children && window.electronAPI) {
+                                    onLoadData(result).catch(err => {
+                                        console.error('加载子节点失败:', err);
+                                    });
+                                }
+                            }
+                            // 阻止事件冒泡，避免触发onSelect
+                            e.stopPropagation();
+                        }
+                    }}
+                    style={{cursor: node.isDirectory ? 'pointer' : 'default'}}
+                >
                     {node.name}
                 </div>
             ),
