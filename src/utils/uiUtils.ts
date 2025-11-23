@@ -86,7 +86,8 @@ export const storage = {
 // 存储键名常量
 export const STORAGE_KEYS = {
   MARKDOWN_FONT_SIZE: 'markdown-viewer-font-size',
-  FILE_ACCESS_HISTORY: 'file-access-history'
+  FILE_ACCESS_HISTORY: 'file-access-history',
+  MARKDOWN_SCROLL_POSITION: 'markdown-viewer-scroll-position'
 } as const;
 
 // 文件访问历史记录接口

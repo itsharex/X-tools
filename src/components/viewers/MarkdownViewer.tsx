@@ -36,6 +36,8 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({filePath, fileNam
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const lastSavedContentRef = useRef<string>('');
     const editorRef = useRef<any>(null);
+    const previewContainerRef = useRef<HTMLDivElement>(null);
+    const scrollPollingRef = useRef<NodeJS.Timeout | null>(null);
 
     // 字体大小调整函数
     const increaseFontSize = () => {
@@ -110,11 +112,52 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({filePath, fileNam
         }, 3000);
     };
 
+    // 设置轮询保存滚动位置
+    useEffect(() => {
+        // 只有在预览模式下才启动轮询
+        if (viewMode === 'rendered') {
+            // 每1秒保存一次滚动位置
+            scrollPollingRef.current = setInterval(() => {
+                if (previewContainerRef.current) {
+                    const scrollTop = previewContainerRef.current.scrollTop;
+                    // 使用文件路径作为键的一部分，确保不同文件有不同的滚动位置
+                    const key = `${STORAGE_KEYS.MARKDOWN_SCROLL_POSITION}_${filePath}`;
+                    storage.set(key, scrollTop);
+                }
+            }, 1000);
+        }
+
+        return () => {
+            if (scrollPollingRef.current) {
+                clearInterval(scrollPollingRef.current);
+            }
+        };
+    }, [viewMode, filePath]);
+
+    // 在文件加载完成且预览模式下恢复滚动位置
+    useEffect(() => {
+        if (!loading && viewMode === 'rendered' && !error) {
+            // 使用文件路径作为键的一部分
+            const key = `${STORAGE_KEYS.MARKDOWN_SCROLL_POSITION}_${filePath}`;
+            const savedScrollTop = storage.get<number>(key, 0);
+            
+            // 延迟设置滚动位置，确保DOM已经完全渲染
+            setTimeout(() => {
+                if (previewContainerRef.current && savedScrollTop > 0) {
+                    previewContainerRef.current.scrollTop = savedScrollTop;
+                }
+            }, 100);
+        }
+    }, [loading, viewMode, error, filePath]);
+
     // 组件卸载时清理定时器
     useEffect(() => {
         return () => {
             if (saveTimeoutRef.current) {
                 clearTimeout(saveTimeoutRef.current);
+            }
+            if (scrollPollingRef.current) {
+                clearInterval(scrollPollingRef.current);
             }
         };
     }, []);
@@ -429,8 +472,9 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({filePath, fileNam
                         <div className={'markdown-container'} style={{height: '100%'}}>
                             {viewMode === 'rendered' ? (
                                 <div
+                                    ref={previewContainerRef}
                                     className="markdown-content"
-                                    style={{fontSize: `${fontSize}px`}}
+                                    style={{fontSize: `${fontSize}px`, overflowY: 'auto', height: '100%'}}
                                     dangerouslySetInnerHTML={{__html: html}}
                                     onClick={handleLinkClick}
                                 />
