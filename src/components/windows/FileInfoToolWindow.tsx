@@ -45,6 +45,8 @@ const FileInfoPanel: React.FC = () => {
     };
 
     // 监听文本选择变化
+    // 这里看起来事件挺杂乱，但确是 Trae 精挑细选的，不能删一条，不然总会漏掉一些场景。
+    // 这个事情，也不能挪到更高层级共享状态，会影响页面选中。要避免 Markdown 页面因状态而重新渲染，而影响选中状态。
     useEffect(() => {
         // 监听选择变化
         document.addEventListener('selectionchange', handleSelectionChange);
