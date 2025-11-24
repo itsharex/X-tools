@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useState} from 'react';
-import {Button, ConfigProvider, Dropdown, Flex, message, Splitter, Tree} from "antd";
+import {App, Button, ConfigProvider, Dropdown, Flex, message, Splitter, Tree} from "antd";
 import {
     DeleteOutlined,
     DownOutlined,
@@ -42,29 +42,29 @@ const AppContent: React.FC = () => {
     const [titleBarVisible, setTitleBarVisible] = useState(true);
     const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
     const [loadedKeys, setLoadedKeys] = useState<Set<string>>(new Set()); // 记录已加载的节点
-    
+
     // 窗口大小相关的状态和功能
     const WINDOW_SIZE_KEY = 'x-tools-window-size';
-    
+
     // 保存窗口大小到local storage
     const saveWindowSize = (width: number, height: number) => {
-      try {
-        const windowSize = { width, height };
-        localStorage.setItem(WINDOW_SIZE_KEY, JSON.stringify(windowSize));
-      } catch (error) {
-        console.error('保存窗口大小失败:', error);
-      }
+        try {
+            const windowSize = {width, height};
+            localStorage.setItem(WINDOW_SIZE_KEY, JSON.stringify(windowSize));
+        } catch (error) {
+            console.error('保存窗口大小失败:', error);
+        }
     };
-    
+
     // 从local storage读取窗口大小
     const getWindowSize = () => {
-      try {
-        const savedSize = localStorage.getItem(WINDOW_SIZE_KEY);
-        return savedSize ? JSON.parse(savedSize) : null;
-      } catch (error) {
-        console.error('读取窗口大小失败:', error);
-        return null;
-      }
+        try {
+            const savedSize = localStorage.getItem(WINDOW_SIZE_KEY);
+            return savedSize ? JSON.parse(savedSize) : null;
+        } catch (error) {
+            console.error('读取窗口大小失败:', error);
+            return null;
+        }
     };
 
     // 加载配置文件
@@ -120,7 +120,7 @@ const AppContent: React.FC = () => {
             window.electronAPI.setWindowButtonVisibility(titleBarVisible);
         }
     }, [titleBarVisible]);
-    
+
     // 监听窗口大小变化并保存
     useEffect(() => {
         // 组件挂载时恢复窗口大小
@@ -132,16 +132,16 @@ const AppContent: React.FC = () => {
                 console.error('恢复窗口大小失败:', error);
             }
         }
-        
+
         // 监听窗口大小变化事件
         const handleResize = () => {
             if (window.innerWidth && window.innerHeight) {
                 saveWindowSize(window.innerWidth, window.innerHeight);
             }
         };
-        
+
         window.addEventListener('resize', handleResize);
-        
+
         // 组件卸载时移除监听器
         return () => {
             window.removeEventListener('resize', handleResize);
@@ -324,16 +324,7 @@ const AppContent: React.FC = () => {
     };
 
     return (
-        <ConfigProvider
-            theme={{
-                components: {
-                    Splitter: {
-                        splitBarDraggableSize: 0,
-                        splitBarSize: 4,
-                    },
-                },
-            }}
-        >
+        <>
             {/*顶部透明区域 - 用于捕捉鼠标靠近顶部的事件，当标题栏隐藏时显示*/}
             {!titleBarVisible && (
                 <div
@@ -455,7 +446,7 @@ const AppContent: React.FC = () => {
             )}
             <Splitter style={{height: titleBarVisible ? 'calc(100vh - 40px)' : '100vh'}}>
                 <Splitter.Panel defaultSize={320} min={'10%'} max={'45%'} collapsible>
-                    <Container style={{overflowY: 'auto',backgroundColor:"white"}}>
+                    <Container style={{overflowY: 'auto', backgroundColor: "white"}}>
                         {fileTree ? (
                             <Tree<TreeNodeWithMeta>
                                 treeData={transformToTreeData(fileTree).children}
@@ -497,14 +488,27 @@ const AppContent: React.FC = () => {
                     </Container>
                 </Splitter.Panel>
             </Splitter>
-        </ConfigProvider>
+        </>
     );
 };
 
-export const App: React.FC = () => {
+export const Home: React.FC = () => {
     return (
-        <AppProvider>
-            <AppContent/>
-        </AppProvider>
+        <ConfigProvider
+            theme={{
+                components: {
+                    Splitter: {
+                        splitBarDraggableSize: 0,
+                        splitBarSize: 4,
+                    },
+                },
+            }}
+        >
+            <App>
+                <AppProvider>
+                    <AppContent/>
+                </AppProvider>
+            </App>
+        </ConfigProvider>
     );
 };

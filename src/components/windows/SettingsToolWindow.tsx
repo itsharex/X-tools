@@ -1,7 +1,7 @@
-import React, {useState, useEffect} from 'react';
-import {Card, Button, Modal, Space, Typography, Tooltip, message} from 'antd';
-import {SettingOutlined, DeleteOutlined, ReloadOutlined} from '@ant-design/icons';
-import {getLocalStorageInfo, formatBytes, clearAllLocalStorage} from '../../utils/storageUtils';
+import React, {useEffect, useState} from 'react';
+import {Button, Card, message, Modal, Space, Tooltip, Typography} from 'antd';
+import {DeleteOutlined, ReloadOutlined, SettingOutlined} from '@ant-design/icons';
+import {clearAllLocalStorage, formatBytes, getLocalStorageInfo} from '../../utils/storageUtils';
 import {ToolWindow} from './toolWindow';
 
 const {Title, Text, Paragraph} = Typography;
@@ -50,7 +50,7 @@ const SettingsPanel: React.FC = () => {
         const success = clearAllLocalStorage();
         if (success) {
           message.success('本地存储已成功清理', 3);
-          refreshStorageInfo();
+            window.location.reload();
         } else {
           message.error('清理失败，请重试', 3);
         }

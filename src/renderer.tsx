@@ -5,7 +5,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import { App } from './App';
+import {Home} from './Home';
 
 // 导入工具窗口初始化脚本（自动执行）
 import './components/windows/initializeToolWindows';
@@ -17,7 +17,7 @@ const root = ReactDOM.createRoot(
 
 root.render(
   <React.StrictMode>
-    <App />
+      <Home/>
   </React.StrictMode>
 );
 
