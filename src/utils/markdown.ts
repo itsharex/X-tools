@@ -68,7 +68,7 @@ function generateAnchorId(text: string, existingIds: Set<string> = new Set()): s
  * @param markdown 要解析的 Markdown 文本
  * @returns 包含 HTML、大纲和 frontmatter 的解析结果
  */
-export async function parseMarkdown(markdown: string): Promise<MarkdownParseResult> {
+export async function parseMarkdown(markdown: string, filePath = ''): Promise<MarkdownParseResult> {
     const outline: OutlineItem[] = [];       // 存储文档大纲
     const stack: OutlineItem[] = [];         // 用于构建大纲树结构的栈
     const existingIds = new Set<string>();   // 用于存储已生成的锚点 ID，确保唯一性
@@ -81,13 +81,25 @@ export async function parseMarkdown(markdown: string): Promise<MarkdownParseResu
         .use(remarkGfm) // 支持 GitHub 风格 Markdown（表格、删除线、任务列表、自动链接等）
         .use(remarkGemoji) // 支持 GitHub 表情符号
         .use(remarkMath) // 支持数学公式
-        // 提取 frontmatter 内容
         .use(() => (tree: any) => {
+            // 提取 frontmatter 内容
             visit(tree, 'yaml', (node) => {
                 try {
                     frontmatter = yaml.parse(node.value);
                 } catch (error) {
                     console.error('解析 frontmatter 失败:', error);
+                }
+            });
+
+            // 图片地址处理，本地文件，加上完整路径
+            visit(tree, 'image', (node) => {
+                try {
+                    console.log('image', node.url, filePath);
+                    if (!node.url.startsWith('http'))
+                        node.url = "file://" + (filePath ? filePath.substring(0, filePath.lastIndexOf('/') + 1) : "") + node.url;
+                    console.log('image now', node);
+                } catch (error) {
+                    console.error('解析 image 失败:', error);
                 }
             });
 

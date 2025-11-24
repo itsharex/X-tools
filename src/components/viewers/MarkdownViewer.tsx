@@ -167,7 +167,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({filePath, fileNam
         const parseContent = async () => {
             if (content) {
                 try {
-                    const result = await parseMarkdown(content);
+                    const result = await parseMarkdown(content, filePath);
                     setHtml(result.html);
                     setOutline(result.outline);
                 } catch (err) {
