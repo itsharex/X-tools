@@ -1,11 +1,12 @@
-import React, {useState, useEffect} from 'react';
-import {Card, Descriptions, Button, Space, Spin, Alert, Typography} from 'antd';
+import React, {useEffect, useState} from 'react';
+import {Alert, Button, Card, Descriptions, Space, Spin, Typography} from 'antd';
 import {FileOutlined, FolderOpenOutlined} from '@ant-design/icons';
-import {formatFileSize, formatDate, countText, getSelectedText, truncateText, getFileTextStats} from '../../utils/format';
+import {countText, formatDate, formatFileSize, getFileTextStats, getSelectedText, truncateText} from '../../utils/format';
 import {isTextFile} from '../../utils/fileType';
 import {useAppContext} from '../../contexts/AppContext';
 import {FileInfo} from "../../types";
 import {ToolWindow} from './toolWindow';
+import TextToSpeech from '../common/TextToSpeech';
 
 const {Text} = Typography;
 
@@ -252,6 +253,9 @@ const FileInfoPanel: React.FC = () => {
             <Card
                 size="small"
                 title="选中内容"
+                extra={
+                    selectedText && <TextToSpeech text={selectedText}/>
+                }
             >
                 <Descriptions size="small" column={1} labelStyle={{width: '80px', textAlign: 'right'}}>
                     <Descriptions.Item label="选中字数">
