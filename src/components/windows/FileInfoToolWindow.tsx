@@ -6,7 +6,6 @@ import {isTextFile} from '../../utils/fileType';
 import {useAppContext} from '../../contexts/AppContext';
 import {FileInfo} from "../../types";
 import {ToolWindow} from './toolWindow';
-import TextToSpeech from '../common/TextToSpeech';
 
 const {Text} = Typography;
 
@@ -255,9 +254,6 @@ const FileInfoPanel: React.FC = () => {
             <Card
                 size="small"
                 title="选中内容"
-                extra={
-                    <TextToSpeech text={selectedText}/>
-                }
             >
                 <Descriptions size="small" column={1} labelStyle={{width: '80px', textAlign: 'right'}}>
                     <Descriptions.Item label="选中字数">
