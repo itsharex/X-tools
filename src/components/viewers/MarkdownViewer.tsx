@@ -405,7 +405,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({filePath, fileNam
 
                 <Space size="large">
 
-                    <TextToSpeech cssSelector={'.markdown-content'}/>
+                    <TextToSpeech cssSelector={'.markdown-content,.markdown-source .cm-line'}/>
 
                     {/* 字体大小调整按钮 */}
                     <Button.Group>

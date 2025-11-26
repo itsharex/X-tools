@@ -144,6 +144,39 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
         return Array.from(elements);
     };
 
+    // 播放
+    const play = (text = '') => {
+        // 创建新的语音实例
+        const utterance = new SpeechSynthesisUtterance(cleanTextForSpeech(text));
+        utterance.lang = 'zh-CN';
+        utterance.rate = 1;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+
+        utterance.onend = () => {
+            console.log('utterance end', currentIndex, utterance);
+            // 朗读完毕，如果是选中文本，就停止播放；否则继续下一个
+            if (selectedText) {
+                setIsPlaying(false);
+            } else {
+                // 使用函数式更新获取最新的currentIndex，避免闭包问题
+                setCurrentIndex(prevIndex => prevIndex + 1);
+            }
+        };
+
+        utterance.onerror = (e) => {
+            console.log('utterance error', currentIndex, utterance, e);
+        };
+
+        utteranceRef.current = utterance;
+
+        synthRef.current?.cancel();
+        // 延后开始播放，否则，cancel 引发的异常会打断当前播放。
+        setTimeout(() => {
+            synthRef.current?.speak(utterance);
+        }, 150)
+    }
+
     // 初始化语音合成实例和轮询
     useEffect(() => {
         synthRef.current = window.speechSynthesis;
@@ -168,19 +201,28 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
     }, [selectedText]);
 
     useEffect(() => {
-        console.log('index changed', currentIndex);
         synthRef.current?.cancel();
-        // 当页面初始化好时，只有一条，这就不需要高亮了。放在前面，是未来不播放的时候，也可以通过这里来切换
-        if (elementsRef.current.length > 1) {
-            const element = elementsRef.current[currentIndex];
-            element.scrollIntoView({behavior: 'smooth', block: 'center'});
-            highlightCurrentElement(currentIndex);
-        }
     }, [currentIndex]);
 
     useEffect(() => {
+
+        // 如果有选中文本，播放中，就播放
+        if (isPlaying && selectedText) {
+            play(selectedText);
+            return;
+        }
+
         // 初始化列表，有时候页面会重绘，每次更新一下列表的好
         elementsRef.current = getElementsFromSelector()
+
+        if (elementsRef.current.length > 1 && !selectedText) {
+            const element = elementsRef.current[currentIndex];
+            if (element) {
+                element.scrollIntoView({behavior: 'smooth', block: 'center'});
+                highlightCurrentElement(currentIndex);
+            }
+        }
+
         // 超了的时候，回到第一条
         if (currentIndex >= elementsRef.current.length) {
             synthRef.current?.cancel();
@@ -212,35 +254,7 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
             return;
         }
 
-        // 创建新的语音实例
-        const utterance = new SpeechSynthesisUtterance(cleanTextForSpeech(text));
-        utterance.lang = 'zh-CN';
-        utterance.rate = 1;
-        utterance.pitch = 1;
-        utterance.volume = 1;
-
-        utterance.onend = () => {
-            console.log('utterance end', currentIndex, utterance);
-            // 朗读完毕，如果是选中文本，就停止播放；否则继续下一个
-            if (selectedText) {
-                setIsPlaying(false);
-            } else {
-                // 使用函数式更新获取最新的currentIndex，避免闭包问题
-                setCurrentIndex(prevIndex => prevIndex + 1);
-            }
-        };
-
-        utterance.onerror = (e) => {
-            console.log('utterance error', currentIndex, utterance, e);
-        };
-
-        utteranceRef.current = utterance;
-
-        synthRef.current?.cancel();
-        // 延后开始播放，否则，cancel 引发的异常会打断当前播放。
-        setTimeout(() => {
-            synthRef.current?.speak(utterance);
-        }, 150)
+        play(text);
     }, [isPlaying, currentIndex]);
 
 
