@@ -21,7 +21,7 @@ interface SearchResult {
 const HIGHLIGHT_COLOR = '#fff3cd';
 const SEARCH_HIGHLIGHT_COLOR = '#ffeb3b';
 const HIGHLIGHT_DURATION = 3000;
-const SCROLL_DELAY = 1000;
+const SCROLL_DELAY = 100;
 
 // 代码行组件
 const CodeLine: React.FC<{
@@ -132,6 +132,7 @@ export const GlobalSearch: React.FC<SearchSplitPanelProps> = ({onClose}) => {
     const [searchPath, setSearchPath] = useState<string>(''); // 搜索路径
     const [subDirectories, setSubDirectories] = useState<Array<{ label: string, value: string }>>([]); // 子目录列表
     const [collapsedKeys, setCollapsedKeys] = useState<string[]>([]); // 折叠的文件key
+    const [currentSearchId, setCurrentSearchId] = useState<string>(''); // 当前搜索ID
 
     // 安全地从localStorage获取数据
     const getLocalStorageItem = useCallback((key: string) => {
@@ -249,6 +250,44 @@ export const GlobalSearch: React.FC<SearchSplitPanelProps> = ({onClose}) => {
         setProgress(progressData);
     }, []);
 
+    // 单个文件搜索结果回调
+    const handleFileResult = useCallback((resultData: { searchId: string, data: SearchResult | null }) => {
+        // 确保这是当前搜索的结果
+        if (resultData.searchId !== currentSearchId) {
+            return;
+        }
+
+        if (resultData.data === null) {
+            // 搜索完成
+            setIsSearching(false);
+            setLoading(false);
+            // 重新计算匹配总数
+            setSearchResults(currentResults => {
+                const totalMatches = currentResults.reduce((sum: number, r: SearchResult) => sum + r.matches.length, 0);
+                message.success(`在 ${currentResults.length} 个文件中找到 ${totalMatches} 条匹配`);
+                return currentResults; // 返回相同的结果，不改变状态
+            });
+        } else {
+            // 添加新的搜索结果
+            setSearchResults(prevResults => {
+                // 检查是否已存在该文件的结果
+                const existingIndex = prevResults.findIndex(r => r.filePath === resultData.data.filePath);
+                if (existingIndex >= 0) {
+                    // 合并匹配结果
+                    const updatedResults = [...prevResults];
+                    updatedResults[existingIndex] = {
+                        ...updatedResults[existingIndex],
+                        matches: [...updatedResults[existingIndex].matches, ...resultData.data.matches]
+                    };
+                    return updatedResults;
+                } else {
+                    // 添加新文件的结果
+                    return [...prevResults, resultData.data];
+                }
+            });
+        }
+    }, [currentSearchId]);
+
     // 监听搜索进度
     useEffect(() => {
         if (window.electronAPI && window.electronAPI.onSearchProgress) {
@@ -261,6 +300,19 @@ export const GlobalSearch: React.FC<SearchSplitPanelProps> = ({onClose}) => {
             }
         };
     }, [handleProgressUpdate]);
+
+    // 监听单个文件搜索结果
+    useEffect(() => {
+        if (window.electronAPI && window.electronAPI.onSearchFileResult) {
+            window.electronAPI.onSearchFileResult(handleFileResult);
+        }
+
+        return () => {
+            if (window.electronAPI && window.electronAPI.offSearchFileResult) {
+                window.electronAPI.offSearchFileResult(handleFileResult);
+            }
+        };
+    }, [handleFileResult]);
 
     // 执行搜索
     const handleSearch = async (query: string) => {
@@ -285,6 +337,10 @@ export const GlobalSearch: React.FC<SearchSplitPanelProps> = ({onClose}) => {
             setSearchHistory(newHistory);
         }
 
+        // 生成新的搜索ID
+        const searchId = `search_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        setCurrentSearchId(searchId);
+
         setLoading(true);
         setIsSearching(true);
         setSearchResults([]);
@@ -292,16 +348,31 @@ export const GlobalSearch: React.FC<SearchSplitPanelProps> = ({onClose}) => {
         setCollapsedKeys([]); // 展开所有文件
 
         try {
-            const results = await window.electronAPI.searchFilesContent(searchPath, query);
-            setSearchResults(results);
-            const totalMatches = results.reduce((sum: number, r: SearchResult) => sum + r.matches.length, 0);
-            message.success(`在 ${results.length} 个文件中找到 ${totalMatches} 条匹配`);
+            await window.electronAPI.searchFilesContent(searchPath, query, searchId);
         } catch (error) {
             console.error('搜索失败:', error);
             message.error('搜索失败，请重试');
-        } finally {
             setLoading(false);
             setIsSearching(false);
+        }
+    };
+
+    // 取消搜索
+    const handleCancelSearch = async () => {
+        if (currentSearchId && window.electronAPI) {
+            try {
+                const cancelled = await window.electronAPI.cancelSearch(currentSearchId);
+                if (cancelled) {
+                    setIsSearching(false);
+                    setLoading(false);
+                    message.info('搜索已取消');
+                } else {
+                    message.warning('无法取消搜索');
+                }
+            } catch (error) {
+                console.error('取消搜索失败:', error);
+                message.error('取消搜索失败');
+            }
         }
     };
 
@@ -428,6 +499,16 @@ export const GlobalSearch: React.FC<SearchSplitPanelProps> = ({onClose}) => {
                                 marginBottom: 16
                             }}>
                                 <Title level={4} style={{margin: 0}}>搜索文件内容</Title>
+                                {isSearching && (
+                                    <Button
+                                        type="primary"
+                                        danger
+                                        size="small"
+                                        onClick={handleCancelSearch}
+                                    >
+                                        取消搜索
+                                    </Button>
+                                )}
                             </div>
 
                             {/* 搜索框和路径选择器组合（保持在一行） */}

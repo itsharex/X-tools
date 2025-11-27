@@ -13,6 +13,9 @@ if (started) {
     app.quit();
 }
 
+// 用于存储当前活动的搜索Worker线程
+const activeSearchWorkers = new Map<string, any>();
+
 // 注册所有IPC处理程序
 function registerIpcHandlers() {
     // 处理文件夹选择对话框请求
@@ -185,7 +188,7 @@ function registerIpcHandlers() {
     });
 
     // 搜索文件内容 - 使用Worker线程
-    ipcMain.handle('searchFilesContent', async (event, dirPath: string, query: string) => {
+    ipcMain.handle('searchFilesContent', async (event, dirPath: string, query: string, searchId: string) => {
         const {Worker} = require('worker_threads');
         const path = require('path');
         const {app} = require('electron');
@@ -208,33 +211,61 @@ function registerIpcHandlers() {
                 workerData: {dirPath, query}
             });
 
+            // 存储Worker引用以便后续取消
+            activeSearchWorkers.set(searchId, worker);
+
+            const results: any[] = [];
+
             // 监听Worker线程消息
-            worker.on('message', (message) => {
+            worker.on('message', (message: any) => {
                 if (message.type === 'progress') {
                     // 转发进度更新到渲染进程
                     event.sender.send('searchProgress', message.data);
-                } else if (message.type === 'result') {
-                    // 搜索完成，返回结果
-                    resolve(message.data);
+                } else if (message.type === 'fileResult') {
+                    // 接收到单个文件的搜索结果
+                    if (message.data === null) {
+                        // 搜索完成
+                        event.sender.send('searchFileResult', {searchId, data: null}); // 发送结束信号到前端
+                        activeSearchWorkers.delete(searchId); // 清除活动Worker引用
+                        resolve(results);
+                    } else {
+                        // 添加到结果列表并发送到前端
+                        results.push(message.data);
+                        event.sender.send('searchFileResult', {searchId, data: message.data});
+                    }
                 } else if (message.type === 'error') {
                     // 搜索出错
+                    activeSearchWorkers.delete(searchId); // 清除活动Worker引用
                     reject(new Error(message.data));
                 }
             });
 
             // 监听Worker线程错误
-            worker.on('error', (error) => {
+            worker.on('error', (error: Error) => {
                 console.error('Worker线程错误:', error);
+                activeSearchWorkers.delete(searchId); // 清除活动Worker引用
                 reject(error);
             });
 
             // 监听Worker线程退出
-            worker.on('exit', (code) => {
+            worker.on('exit', (code: number) => {
                 if (code !== 0) {
                     console.error(`Worker线程退出，退出码: ${code}`);
                 }
+                activeSearchWorkers.delete(searchId); // 确保清除活动Worker引用
             });
         });
+    });
+
+    // 取消搜索
+    ipcMain.handle('cancelSearch', async (event, searchId: string) => {
+        const worker = activeSearchWorkers.get(searchId);
+        if (worker) {
+            worker.terminate(); // 终止Worker线程
+            activeSearchWorkers.delete(searchId); // 清除引用
+            return true;
+        }
+        return false;
     });
 }
 

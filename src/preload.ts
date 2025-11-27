@@ -25,11 +25,17 @@ interface ElectronAPI {
     /** 获取文件/目录基本信息 */
     getFileInfo: (filePath: string) => Promise<any>;
     /** 搜索文件内容 */
-    searchFilesContent: (dirPath: string, query: string) => Promise<any>;
+    searchFilesContent: (dirPath: string, query: string, searchId: string) => Promise<any>;
+    /** 取消搜索 */
+    cancelSearch: (searchId: string) => Promise<boolean>;
     /** 监听搜索进度事件 */
     onSearchProgress: (callback: (progress: { totalFiles: number; currentFile: number; totalLines: number }) => void) => void;
     /** 取消监听搜索进度事件 */
     offSearchProgress: (callback: (progress: { totalFiles: number; currentFile: number; totalLines: number }) => void) => void;
+    /** 监听单个文件搜索结果事件 */
+    onSearchFileResult: (callback: (result: any) => void) => void;
+    /** 取消监听单个文件搜索结果事件 */
+    offSearchFileResult: (callback: (result: any) => void) => void;
     
     // === 窗口控制 ===
     /** 控制红绿灯（窗口控制按钮）的显示/隐藏 */
@@ -68,9 +74,12 @@ const electronAPI: ElectronAPI = {
     getFileTree: (path: string) => ipcRenderer.invoke('getFileTree', path) as Promise<FileNode>,
     getDirectoryChildren: (dirPath: string) => ipcRenderer.invoke('getDirectoryChildren', dirPath) as Promise<FileNode[]>,
     getFileInfo: (filePath: string) => ipcRenderer.invoke('getFileInfo', filePath),
-    searchFilesContent: (dirPath: string, query: string) => ipcRenderer.invoke('searchFilesContent', dirPath, query) as Promise<any>,
+    searchFilesContent: (dirPath: string, query: string, searchId: string) => ipcRenderer.invoke('searchFilesContent', dirPath, query, searchId) as Promise<any>,
+    cancelSearch: (searchId: string) => ipcRenderer.invoke('cancelSearch', searchId) as Promise<boolean>,
     onSearchProgress: (callback) => ipcRenderer.on('searchProgress', (event, progress) => callback(progress)),
     offSearchProgress: (callback) => ipcRenderer.off('searchProgress', (event, progress) => callback(progress)),
+    onSearchFileResult: (callback) => ipcRenderer.on('searchFileResult', (event, result) => callback(result)),
+    offSearchFileResult: (callback) => ipcRenderer.off('searchFileResult', (event, result) => callback(result)),
     
     // 窗口控制
     setWindowButtonVisibility: (visible: boolean) => ipcRenderer.invoke('setWindowButtonVisibility', visible) as Promise<void>,
