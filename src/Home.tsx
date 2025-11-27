@@ -329,8 +329,6 @@ const AppContent: React.FC = () => {
         setSearchPanelOpen(false);
     };
 
-
-
     return (
         <>
             {/*顶部透明区域 - 用于捕捉鼠标靠近顶部的事件，当标题栏隐藏时显示*/}
@@ -496,23 +494,6 @@ const AppContent: React.FC = () => {
                                 请在左侧选择一个文件以预览内容
                             </Center>
                         )}
-
-                        {/* 搜索抽屉 */}
-                        <Drawer
-                            title="搜索"
-                            placement="left"
-                            width="75%"
-                            open={searchPanelOpen}
-                            onClose={() => setSearchPanelOpen(false)}
-                            maskClosable={true}
-                            closable={true}
-                        >
-                            <div style={{height: '100%'}}>
-                                <SearchSplitPanel
-                                    onClose={() => setSearchPanelOpen(false)}
-                                />
-                            </div>
-                        </Drawer>
                     </Container>
                 </Splitter.Panel>
                 <Splitter.Panel defaultSize={320} min={'10%'} max={'45%'} collapsible>
@@ -521,6 +502,32 @@ const AppContent: React.FC = () => {
                     </Container>
                 </Splitter.Panel>
             </Splitter>
+
+            {/* 搜索抽屉 */}
+            <Drawer
+                title="搜索"
+                placement="left"
+                width="75%"
+                open={searchPanelOpen}
+                closable={false}
+                maskClosable={true}
+                onClose={() => setSearchPanelOpen(false)}
+                styles={{
+                    header: {
+                        height: '40px',
+                    },
+                    title: {
+                        paddingLeft: '72px',
+                        textAlign: 'center',
+                    }
+                }}
+            >
+                <div style={{height: '100%'}}>
+                    <SearchSplitPanel
+                        onClose={() => setSearchPanelOpen(false)}
+                    />
+                </div>
+            </Drawer>
         </>
     );
 };

@@ -509,7 +509,7 @@ export const SearchSplitPanel: React.FC<SearchSplitPanelProps> = ({onClose}) => 
     return (
         <div style={{height: '100%'}}>
             <Splitter style={{height: '100%'}}>
-                <Splitter.Panel defaultSize="50%" min="30%" max="70%">
+                <Splitter.Panel defaultSize="30%" min="20%" max="70%">
                     <div style={{height: '100%', display: 'flex', flexDirection: 'column'}}>
                         <SearchPanel
                             onResultClick={handleResultClick}
