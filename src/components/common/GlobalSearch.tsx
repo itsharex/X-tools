@@ -23,6 +23,11 @@ const SEARCH_HIGHLIGHT_COLOR = '#ffeb3b';
 const HIGHLIGHT_DURATION = 3000;
 const SCROLL_DELAY = 100;
 
+// 数字格式化函数 - 添加千分位分隔符
+const formatNumber = (num: number): string => {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+};
+
 // 代码行组件
 const CodeLine: React.FC<{
     lineNumber: number;
@@ -264,7 +269,7 @@ export const GlobalSearch: React.FC<SearchSplitPanelProps> = ({onClose}) => {
             // 重新计算匹配总数
             setSearchResults(currentResults => {
                 const totalMatches = currentResults.reduce((sum: number, r: SearchResult) => sum + r.matches.length, 0);
-                message.success(`在 ${currentResults.length} 个文件中找到 ${totalMatches} 条匹配`);
+                message.success(`在 ${formatNumber(currentResults.length)} 个文件中找到 ${formatNumber(totalMatches)} 条匹配`);
                 return currentResults; // 返回相同的结果，不改变状态
             });
         } else {
@@ -558,7 +563,7 @@ export const GlobalSearch: React.FC<SearchSplitPanelProps> = ({onClose}) => {
                                 <Card size="small" style={{marginBottom: 16}}>
                                     <div style={{marginBottom: 8}}>
                                         <Text type="secondary">
-                                            {progress.totalFiles > 0 ? `正在搜索: ${progress.currentFile}/${progress.totalFiles} 个文件` : '正在统计文件数量...'}
+                                            {progress.totalFiles > 0 ? `正在搜索: ${formatNumber(progress.currentFile)}/${formatNumber(progress.totalFiles)} 个文件` : '正在统计文件数量...'}
                                         </Text>
                                     </div>
                                     <Progress
@@ -568,7 +573,7 @@ export const GlobalSearch: React.FC<SearchSplitPanelProps> = ({onClose}) => {
                                     />
                                     <div style={{marginTop: 8, fontSize: 12}}>
                                         <Text type="secondary">
-                                            已搜索 {progress.totalLines} 行
+                                            已搜索 {formatNumber(progress.totalLines)} 行
                                         </Text>
                                     </div>
                                 </Card>
@@ -580,13 +585,13 @@ export const GlobalSearch: React.FC<SearchSplitPanelProps> = ({onClose}) => {
                                     <Space size="small">
                                         <Statistic
                                             title=""
-                                            value={searchResults.length}
+                                            value={formatNumber(searchResults.length)}
                                             valueStyle={{fontSize: 16}}
                                             suffix="个文件"
                                         />
                                         <Statistic
                                             title=""
-                                            value={totalMatches}
+                                            value={formatNumber(totalMatches)}
                                             valueStyle={{fontSize: 16}}
                                             suffix="条匹配"
                                         />
