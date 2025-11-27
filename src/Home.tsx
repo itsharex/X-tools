@@ -25,7 +25,7 @@ import {truncateFolderName} from './utils/uiUtils';
 import {Config, removeFolderPath, updateFolderPath} from "./utils/config";
 import {Container} from "./components/common/Container";
 import {Center} from "./components/common/Center";
-import {SearchSplitPanel} from './components/common/SearchSplitPanel';
+import {GlobalSearch} from './components/common/GlobalSearch';
 
 // 为Tree组件定义的节点类型
 export type TreeNodeWithMeta = DataNode & {
@@ -523,7 +523,7 @@ const AppContent: React.FC = () => {
                 }}
             >
                 <div style={{height: '100%'}}>
-                    <SearchSplitPanel
+                    <GlobalSearch
                         onClose={() => setSearchPanelOpen(false)}
                     />
                 </div>

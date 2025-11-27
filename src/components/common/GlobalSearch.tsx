@@ -21,7 +21,7 @@ interface SearchResult {
 const HIGHLIGHT_COLOR = '#fff3cd';
 const SEARCH_HIGHLIGHT_COLOR = '#ffeb3b';
 const HIGHLIGHT_DURATION = 3000;
-const SCROLL_DELAY = 300;
+const SCROLL_DELAY = 1000;
 
 // 代码行组件
 const CodeLine: React.FC<{
@@ -112,7 +112,7 @@ interface SearchSplitPanelProps {
     onClose: () => void;
 }
 
-export const SearchSplitPanel: React.FC<SearchSplitPanelProps> = ({onClose}) => {
+export const GlobalSearch: React.FC<SearchSplitPanelProps> = ({onClose}) => {
     const {currentFolder, setCurrentFile} = useAppContext();
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
