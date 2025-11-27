@@ -128,21 +128,42 @@ export const GlobalSearch: React.FC<SearchSplitPanelProps> = ({onClose}) => {
     const [content, setContent] = useState<string>('');
     const [previewLoading, setPreviewLoading] = useState(false);
     const [previewError, setPreviewError] = useState<string | null>(null);
-    const [targetLine, setTargetLine] = useState<number | null>(null);
     const [searchHistory, setSearchHistory] = useState<string[]>([]);
     const [searchPath, setSearchPath] = useState<string>(''); // 搜索路径
     const [subDirectories, setSubDirectories] = useState<Array<{ label: string, value: string }>>([]); // 子目录列表
     const [collapsedKeys, setCollapsedKeys] = useState<string[]>([]); // 折叠的文件key
 
+    // 安全地从localStorage获取数据
+    const getLocalStorageItem = useCallback((key: string) => {
+        try {
+            return localStorage.getItem(key);
+        } catch (e) {
+            console.warn('无法访问localStorage:', e);
+            return null;
+        }
+    }, []);
+
+    // 安全地向localStorage设置数据
+    const setLocalStorageItem = useCallback((key: string, value: string) => {
+        try {
+            localStorage.setItem(key, value);
+        } catch (e) {
+            console.warn('无法写入localStorage:', e);
+        }
+    }, []);
+
     // 初始化搜索历史和搜索路径
     useEffect(() => {
         // 从localStorage加载搜索历史
-        const history = localStorage.getItem('search-history');
+        const history = getLocalStorageItem('search-history');
         if (history) {
             try {
-                setSearchHistory(JSON.parse(history));
+                const parsedHistory = JSON.parse(history);
+                console.log('加载搜索历史:', parsedHistory);
+                setSearchHistory(Array.isArray(parsedHistory) ? parsedHistory : []);
             } catch (e) {
                 console.error('解析搜索历史失败:', e);
+                setSearchHistory([]);
             }
         }
 
@@ -150,7 +171,7 @@ export const GlobalSearch: React.FC<SearchSplitPanelProps> = ({onClose}) => {
         if (currentFolder) {
             setSearchPath(currentFolder);
         }
-    }, [currentFolder]);
+    }, [currentFolder, getLocalStorageItem]);
 
     // 获取子目录列表（支持两层深度）
     useEffect(() => {
@@ -205,8 +226,12 @@ export const GlobalSearch: React.FC<SearchSplitPanelProps> = ({onClose}) => {
 
     // 保存搜索历史到localStorage
     useEffect(() => {
-        localStorage.setItem('search-history', JSON.stringify(searchHistory));
-    }, [searchHistory]);
+        console.log('搜索历史更新:', searchHistory);
+        if (Array.isArray(searchHistory) && searchHistory.length > 0) {
+            console.log('保存搜索历史到localStorage:', searchHistory);
+            setLocalStorageItem('search-history', JSON.stringify(searchHistory));
+        }
+    }, [searchHistory, setLocalStorageItem]);
 
     // 当当前文件夹变化时，清空搜索结果
     useEffect(() => {
@@ -249,8 +274,15 @@ export const GlobalSearch: React.FC<SearchSplitPanelProps> = ({onClose}) => {
         }
 
         // 添加到搜索历史
-        if (!searchHistory.includes(query)) {
-            setSearchHistory(prev => [query, ...prev.slice(0, 9)]); // 保持最多10条历史
+        if (query.trim() && !searchHistory.includes(query.trim())) {
+            const newHistory = [query.trim(), ...searchHistory.slice(0, 9)]; // 保持最多10条历史
+            console.log('更新搜索历史:', newHistory);
+            setSearchHistory(newHistory);
+        } else if (query.trim()) {
+            // 如果查询已存在于历史中，将其移到最前面
+            const newHistory = [query.trim(), ...searchHistory.filter(item => item !== query.trim())];
+            console.log('重新排列搜索历史:', newHistory);
+            setSearchHistory(newHistory);
         }
 
         setLoading(true);
@@ -305,12 +337,10 @@ export const GlobalSearch: React.FC<SearchSplitPanelProps> = ({onClose}) => {
         // 只有当文件路径不同时才重新加载文件内容
         if (!previewFile || previewFile.filePath !== filePath) {
             setPreviewFile({filePath, fileName, line});
-            setTargetLine(line || null);
             loadFileContent(filePath);
         } else {
             // 同一文件的不同行跳转，只需更新行号和目标行
             setPreviewFile({...previewFile, line});
-            setTargetLine(line || null);
 
             // 延迟执行滚动以确保DOM已更新
             setTimeout(() => {
@@ -577,7 +607,6 @@ export const GlobalSearch: React.FC<SearchSplitPanelProps> = ({onClose}) => {
                                     justifyContent: 'space-between',
                                     alignItems: 'center',
                                     background: '#fafafa',
-                                    // margin: '-16px -16px 16px -16px'
                                 }}>
                                     <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
                                         <FileTextOutlined/>
