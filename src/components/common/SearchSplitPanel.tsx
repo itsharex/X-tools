@@ -1,6 +1,6 @@
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {Button, Card, Collapse, Empty, Input, message, Progress, Select, Space, Spin, Splitter, Statistic, Typography} from 'antd';
-import {FileTextOutlined, SearchOutlined} from '@ant-design/icons';
+import {DownOutlined, FileTextOutlined, HistoryOutlined, SearchOutlined, UpOutlined} from '@ant-design/icons';
 import {useAppContext} from '../../contexts/AppContext';
 import {Center} from './Center';
 
@@ -21,7 +21,7 @@ interface SearchResult {
 const HIGHLIGHT_COLOR = '#fff3cd';
 const SEARCH_HIGHLIGHT_COLOR = '#ffeb3b';
 const HIGHLIGHT_DURATION = 3000;
-const SCROLL_DELAY = 100;
+const SCROLL_DELAY = 300;
 
 // 代码行组件
 const CodeLine: React.FC<{
@@ -108,18 +108,13 @@ const highlightText = (text: string, query: string) => {
     );
 };
 
-interface SearchPanelProps {
-    onResultClick: (filePath: string, fileName: string, line?: number) => void;
-    searchQuery: string;
-    setSearchQuery: (query: string) => void;
+interface SearchSplitPanelProps {
+    onClose: () => void;
 }
 
-export const SearchPanel: React.FC<SearchPanelProps> = ({
-                                                            onResultClick,
-                                                            searchQuery,
-                                                            setSearchQuery
-                                                        }) => {
-    const {currentFolder} = useAppContext();
+export const SearchSplitPanel: React.FC<SearchSplitPanelProps> = ({onClose}) => {
+    const {currentFolder, setCurrentFile} = useAppContext();
+    const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const [loading, setLoading] = useState(false);
     const [sortBy, setSortBy] = useState<'name' | 'ctime' | 'mtime'>('name');
@@ -129,11 +124,99 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
         totalLines: 0
     });
     const [isSearching, setIsSearching] = useState(false);
+    const [previewFile, setPreviewFile] = useState<{ filePath: string; fileName: string; line?: number } | null>(null);
+    const [content, setContent] = useState<string>('');
+    const [previewLoading, setPreviewLoading] = useState(false);
+    const [previewError, setPreviewError] = useState<string | null>(null);
+    const [targetLine, setTargetLine] = useState<number | null>(null);
+    const [searchHistory, setSearchHistory] = useState<string[]>([]);
+    const [searchPath, setSearchPath] = useState<string>(''); // 搜索路径
+    const [subDirectories, setSubDirectories] = useState<Array<{ label: string, value: string }>>([]); // 子目录列表
+    const [collapsedKeys, setCollapsedKeys] = useState<string[]>([]); // 折叠的文件key
+
+    // 初始化搜索历史和搜索路径
+    useEffect(() => {
+        // 从localStorage加载搜索历史
+        const history = localStorage.getItem('search-history');
+        if (history) {
+            try {
+                setSearchHistory(JSON.parse(history));
+            } catch (e) {
+                console.error('解析搜索历史失败:', e);
+            }
+        }
+
+        // 设置默认搜索路径为当前文件夹
+        if (currentFolder) {
+            setSearchPath(currentFolder);
+        }
+    }, [currentFolder]);
+
+    // 获取子目录列表（支持两层深度）
+    useEffect(() => {
+        if (currentFolder && window.electronAPI) {
+            const loadSubDirectories = async () => {
+                try {
+                    // 获取第一层子目录
+                    const children = await window.electronAPI.getDirectoryChildren(currentFolder);
+                    const firstLevelDirs = children
+                        .filter(child => child.isDirectory)
+                        .map(child => ({
+                            label: child.name,
+                            value: child.path
+                        }))
+                        .sort((a, b) => a.label.localeCompare(b.label)); // 排序
+
+                    // 获取第二层子目录
+                    const secondLevelDirs: Array<{ label: string, value: string }> = [];
+                    for (const dir of firstLevelDirs) {
+                        try {
+                            const subChildren = await window.electronAPI.getDirectoryChildren(dir.value);
+                            const subDirs = subChildren
+                                .filter(child => child.isDirectory)
+                                .map(child => ({
+                                    label: `${dir.label}/${child.name}`,
+                                    value: child.path
+                                }))
+                                .sort((a, b) => a.label.localeCompare(b.label)); // 排序
+                            secondLevelDirs.push(...subDirs);
+                        } catch (error) {
+                            console.error(`获取子目录失败: ${dir.value}`, error);
+                        }
+                    }
+
+                    // 构建选项列表：当前目录 + 一级目录 + 二级目录
+                    const options = [
+                        {label: '/', value: currentFolder},
+                        ...firstLevelDirs,
+                        ...secondLevelDirs
+                    ];
+
+                    setSubDirectories(options);
+                } catch (error) {
+                    console.error('获取子目录失败:', error);
+                    // 出错时只包含当前目录
+                    setSubDirectories([{label: '/', value: currentFolder}]);
+                }
+            };
+            loadSubDirectories();
+        }
+    }, [currentFolder]);
+
+    // 保存搜索历史到localStorage
+    useEffect(() => {
+        localStorage.setItem('search-history', JSON.stringify(searchHistory));
+    }, [searchHistory]);
 
     // 当当前文件夹变化时，清空搜索结果
     useEffect(() => {
         setSearchResults([]);
         setSearchQuery('');
+        if (currentFolder) {
+            setSearchPath(currentFolder);
+        }
+        // 关闭预览视图
+        setPreviewFile(null);
     }, [currentFolder]);
 
     // 进度更新回调
@@ -155,23 +238,29 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
     }, [handleProgressUpdate]);
 
     // 执行搜索
-    const handleSearch = async () => {
-        if (!currentFolder) {
-            message.warning('请先选择文件夹');
+    const handleSearch = async (query: string) => {
+        if (!searchPath) {
+            message.warning('请选择搜索路径');
             return;
         }
-        if (!searchQuery.trim()) {
+        if (!query.trim()) {
             message.warning('请输入搜索关键词');
             return;
+        }
+
+        // 添加到搜索历史
+        if (!searchHistory.includes(query)) {
+            setSearchHistory(prev => [query, ...prev.slice(0, 9)]); // 保持最多10条历史
         }
 
         setLoading(true);
         setIsSearching(true);
         setSearchResults([]);
         setProgress({totalFiles: 0, currentFile: 0, totalLines: 0});
+        setCollapsedKeys([]); // 展开所有文件
 
         try {
-            const results = await window.electronAPI.searchFilesContent(currentFolder, searchQuery);
+            const results = await window.electronAPI.searchFilesContent(searchPath, query);
             setSearchResults(results);
             const totalMatches = results.reduce((sum: number, r: SearchResult) => sum + r.matches.length, 0);
             message.success(`在 ${results.length} 个文件中找到 ${totalMatches} 条匹配`);
@@ -185,11 +274,17 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
     };
 
     // 排序搜索结果
-    const sortedResults = React.useMemo(() => {
+    const sortedResults = useMemo(() => {
         const sorted = [...searchResults];
         sorted.sort((a, b) => {
             if (sortBy === 'name') {
                 return a.fileName.localeCompare(b.fileName);
+            } else if (sortBy === 'ctime') {
+                // TODO: 实现按创建时间排序
+                return 0;
+            } else if (sortBy === 'mtime') {
+                // TODO: 实现按修改时间排序
+                return 0;
             }
             return 0;
         });
@@ -199,335 +294,347 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
     // 计算统计数据
     const totalMatches = searchResults.reduce((sum: number, r: SearchResult) => sum + r.matches.length, 0);
 
-    return (
-        <div style={{padding: 16, height: '100%', display: 'flex', flexDirection: 'column'}}>
-            <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: 16
-            }}>
-                <Title level={4} style={{margin: 0}}>搜索文件内容</Title>
-            </div>
+    // 处理搜索历史项点击
+    const handleHistoryItemClick = (query: string) => {
+        setSearchQuery(query);
+        handleSearch(query);
+    };
 
-            <Search
-                placeholder="输入搜索关键词"
-                allowClear
-                enterButton={<SearchOutlined/>}
-                size="large"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onSearch={handleSearch}
-                loading={loading}
-                style={{marginBottom: 16}}
-            />
+    // 处理结果点击
+    const handleResultClick = (filePath: string, fileName: string, line?: number) => {
+        // 只有当文件路径不同时才重新加载文件内容
+        if (!previewFile || previewFile.filePath !== filePath) {
+            setPreviewFile({filePath, fileName, line});
+            setTargetLine(line || null);
+            loadFileContent(filePath);
+        } else {
+            // 同一文件的不同行跳转，只需更新行号和目标行
+            setPreviewFile({...previewFile, line});
+            setTargetLine(line || null);
 
-            {/* 搜索进度显示 */}
-            {isSearching && (
-                <Card size="small" style={{marginBottom: 16}}>
-                    <div style={{marginBottom: 8}}>
-                        <Text type="secondary">
-                            {progress.totalFiles > 0 ? `正在搜索: ${progress.currentFile}/${progress.totalFiles} 个文件` : '正在统计文件数量...'}
-                        </Text>
-                    </div>
-                    <Progress
-                        percent={progress.totalFiles > 0 ? Math.round((progress.currentFile / progress.totalFiles) * 100) : 0}
-                        size="small"
-                        status="active"
-                    />
-                    <div style={{marginTop: 8, fontSize: 12}}>
-                        <Text type="secondary">
-                            已搜索 {progress.totalLines} 行
-                        </Text>
-                    </div>
-                </Card>
-            )}
+            // 延迟执行滚动以确保DOM已更新
+            setTimeout(() => {
+                if (line) {
+                    const targetElement = document.getElementById(`line-${line}`);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({behavior: 'smooth', block: 'center'});
+                        targetElement.style.backgroundColor = HIGHLIGHT_COLOR;
+                        setTimeout(() => {
+                            targetElement.style.backgroundColor = '';
+                        }, HIGHLIGHT_DURATION);
+                    }
+                }
+            }, SCROLL_DELAY);
+        }
+    };
 
-            {/* 搜索结果统计和排序 */}
-            {searchResults.length > 0 && (
-                <div style={{marginBottom: 16}}>
-                    <Space split="|　">
-                        <Statistic
-                            title="匹配文件"
-                            value={searchResults.length}
-                            valueStyle={{fontSize: 16}}
-                            suffix="个"
-                        />
-                        <Statistic
-                            title="命中条目"
-                            value={totalMatches}
-                            valueStyle={{fontSize: 16}}
-                            suffix="条"
-                        />
-                    </Space>
-                    <div style={{marginTop: 12}}>
-                        <Space>
-                            <Text type="secondary">排序方式:</Text>
-                            <Select
-                                size="small"
-                                value={sortBy}
-                                onChange={setSortBy}
-                                style={{width: 120}}
-                                options={[
-                                    {label: '文件名', value: 'name'},
-                                    {label: '创建时间', value: 'ctime', disabled: true},
-                                    {label: '修改时间', value: 'mtime', disabled: true}
-                                ]}
-                            />
-                        </Space>
-                    </div>
-                </div>
-            )}
-
-            {/* 搜索结果列表 */}
-            <div style={{flex: 1, overflow: 'auto'}}>
-                {sortedResults.length > 0 ? (
-                    <Collapse
-                        defaultActiveKey={sortedResults.map((_, idx) => idx.toString())}
-                        size="small"
-                    >
-                        {sortedResults.map((result, idx) => (
-                            <Panel
-                                key={idx.toString()}
-                                header={
-                                    <Space>
-                                        <FileTextOutlined/>
-                                        <Text strong>{result.fileName}</Text>
-                                        <Text type="secondary">({result.matches.length} 条匹配)</Text>
-                                    </Space>
-                                }
-                            >
-                                <div style={{paddingLeft: 24}}>
-                                    {result.matches.map((match, matchIdx) => (
-                                        <div key={matchIdx} style={{marginBottom: 12}}>
-                                            <div style={{marginBottom: 4}}>
-                                                <Text type="secondary" style={{fontSize: 12}}>第 {match.line} 行:</Text>
-                                            </div>
-                                            <div
-                                                onClick={() => onResultClick(result.filePath, result.fileName, match.line)}
-                                                style={{
-                                                    cursor: 'pointer',
-                                                    padding: '4px 8px',
-                                                    background: '#f5f5f5',
-                                                    borderRadius: '4px',
-                                                    fontSize: 12,
-                                                    wordBreak: 'break-word',
-                                                    transition: 'background 0.2s'
-                                                }}
-                                                onMouseEnter={(e) => e.currentTarget.style.background = '#e6f7ff'}
-                                                onMouseLeave={(e) => e.currentTarget.style.background = '#f5f5f5'}
-                                            >
-                                                {highlightText(match.content, searchQuery)}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </Panel>
-                        ))}
-                    </Collapse>
-                ) : isSearching ? null : (
-                    <div style={{textAlign: 'center', padding: 40, color: '#999'}}>
-                        <Text type="secondary">输入关键词开始搜索</Text>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
-
-interface FilePreviewProps {
-    filePath: string;
-    fileName: string;
-    searchQuery: string;
-    onBack: () => void;
-    onOpenFile: (filePath: string, fileName: string) => void;
-}
-
-const FilePreview: React.FC<FilePreviewProps> = ({
-                                                     filePath,
-                                                     fileName,
-                                                     searchQuery,
-                                                     onBack,
-                                                     onOpenFile
-                                                 }) => {
-    const [content, setContent] = useState<string>('');
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [targetLine, setTargetLine] = useState<number | null>(null);
-
-    // 解析带行号的文件路径
-    useEffect(() => {
-        const pathParts = filePath.split('#line=');
-        const actualFilePath = pathParts[0];
-        const line = pathParts[1] ? parseInt(pathParts[1], 10) : null;
-
-        setTargetLine(line);
-        loadFileContent(actualFilePath);
-    }, [filePath]);
-
+    // 加载文件内容
     const loadFileContent = async (path: string) => {
         try {
-            setLoading(true);
-            setError(null);
+            setPreviewLoading(true);
+            setPreviewError(null);
 
             if (window.electronAPI) {
                 const fileContent = await window.electronAPI.readFile(path);
                 setContent(fileContent);
             } else {
-                setError('无法读取文件：需要在 Electron 环境中运行');
+                setPreviewError('无法读取文件：需要在 Electron 环境中运行');
             }
         } catch (err) {
             console.error('读取文件失败:', err);
-            setError('读取文件失败：' + (err instanceof Error ? err.message : String(err)));
+            setPreviewError('读取文件失败：' + (err instanceof Error ? err.message : String(err)));
         } finally {
-            setLoading(false);
+            setPreviewLoading(false);
         }
     };
 
-    // 跳转到目标行并高亮
-    useEffect(() => {
-        if (!loading && targetLine) {
-            setTimeout(() => {
-                const targetElement = document.getElementById(`line-${targetLine}`);
-                if (targetElement) {
-                    targetElement.scrollIntoView({behavior: 'smooth', block: 'center'});
-                    targetElement.style.backgroundColor = HIGHLIGHT_COLOR;
-                    setTimeout(() => {
-                        targetElement.style.backgroundColor = '';
-                    }, HIGHLIGHT_DURATION);
-                }
-            }, SCROLL_DELAY);
-        }
-    }, [loading, targetLine]);
-
-    return (
-        <div style={{height: '100%', display: 'flex', flexDirection: 'column'}}>
-            {/* 预览标题栏 */}
-            <div style={{
-                padding: '8px 16px',
-                borderBottom: '1px solid #f0f0f0',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                background: '#fafafa'
-            }}>
-                <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
-                    <Button
-                        type="text"
-                        icon={<span>←</span>}
-                        onClick={onBack}
-                        title="返回搜索结果"
-                    >
-                        返回
-                    </Button>
-                    <FileTextOutlined/>
-                    <h2 style={{margin: 0, fontSize: '16px', fontWeight: 500}}>
-                        {fileName}
-                        {targetLine && (
-                            <span style={{color: '#999', fontSize: '14px', marginLeft: '8px'}}>
-                                (行 {targetLine})
-                            </span>
-                        )}
-                    </h2>
-                </div>
-                <div style={{display: 'flex', gap: 8, alignItems: 'center'}}>
-                    <Button
-                        type="primary"
-                        size="small"
-                        onClick={() => onOpenFile(filePath, fileName)}
-                        title="在主视图中打开文件"
-                    >
-                        打开文件
-                    </Button>
-                </div>
-            </div>
-
-            {/* 预览内容 */}
-            <div style={{flex: 1, overflow: 'auto', padding: '8px', backgroundColor: '#fafafa'}}>
-                {loading ? (
-                    <Center>
-                        <Spin size="large"/>
-                        <div>正在加载文件...</div>
-                    </Center>
-                ) : error ? (
-                    <Center>
-                        <Empty
-                            description={error}
-                            image={Empty.PRESENTED_IMAGE_SIMPLE}
-                        />
-                    </Center>
-                ) : (
-                    <div style={{
-                        backgroundColor: '#fff',
-                        border: '1px solid #e8e8e8',
-                        borderRadius: '4px',
-                        padding: '8px'
-                    }}>
-                        {content.split('\n').map((line, index) => (
-                            <CodeLine
-                                key={index + 1}
-                                lineNumber={index + 1}
-                                content={line}
-                                searchQuery={searchQuery}
-                            />
-                        ))}
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
-
-interface SearchSplitPanelProps {
-    onClose: () => void;
-}
-
-export const SearchSplitPanel: React.FC<SearchSplitPanelProps> = ({onClose}) => {
-    const {setCurrentFile} = useAppContext();
-    const [searchQuery, setSearchQuery] = useState('');
-    const [previewFile, setPreviewFile] = useState<{ filePath: string; fileName: string } | null>(null);
-
-    const handleResultClick = (filePath: string, fileName: string, line?: number) => {
-        // 将行号附加到文件路径中
-        const filePathWithLine = line ? `${filePath}#line=${line}` : filePath;
-        setPreviewFile({filePath: filePathWithLine, fileName});
-    };
-
+    // 处理打开文件
     const handleOpenFile = (filePath: string, fileName: string) => {
-        // 移除行号部分
-        const actualFilePath = filePath.split('#line=')[0];
         const fileNode = {
-            id: actualFilePath,
+            id: filePath,
             name: fileName,
-            path: actualFilePath,
+            path: filePath,
             isDirectory: false
         };
         setCurrentFile(fileNode as any);
         onClose();
     };
 
+    // 切换文件折叠状态
+    const toggleFileCollapse = (fileKey: string) => {
+        if (collapsedKeys.includes(fileKey)) {
+            setCollapsedKeys(collapsedKeys.filter(key => key !== fileKey));
+        } else {
+            setCollapsedKeys([...collapsedKeys, fileKey]);
+        }
+    };
+
+    // 全部折叠/展开
+    const toggleAllCollapse = () => {
+        if (collapsedKeys.length === sortedResults.length) {
+            // 当前全部折叠，执行展开（清空折叠key）
+            setCollapsedKeys([]);
+        } else {
+            // 当前部分或全部展开，执行折叠（设置所有文件key为折叠状态）
+            const allKeys = sortedResults.map((_, idx) => idx.toString());
+            setCollapsedKeys(allKeys);
+        }
+    };
+
+    // 检查是否全部折叠
+    const isAllCollapsed = collapsedKeys.length === sortedResults.length && sortedResults.length > 0;
+
     return (
         <div style={{height: '100%'}}>
             <Splitter style={{height: '100%'}}>
-                <Splitter.Panel defaultSize="30%" min="20%" max="70%">
+                {/* 左侧面板 - 搜索 */}
+                <Splitter.Panel defaultSize="40%" min="30%" max="60%">
                     <div style={{height: '100%', display: 'flex', flexDirection: 'column'}}>
-                        <SearchPanel
-                            onResultClick={handleResultClick}
-                            searchQuery={searchQuery}
-                            setSearchQuery={setSearchQuery}
-                        />
+                        <div style={{padding: 16, height: '100%', display: 'flex', flexDirection: 'column'}}>
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: 16
+                            }}>
+                                <Title level={4} style={{margin: 0}}>搜索文件内容</Title>
+                            </div>
+
+                            {/* 搜索框和路径选择器组合（保持在一行） */}
+                            <div style={{marginBottom: 16}}>
+                                <Space.Compact style={{width: '100%'}}>
+                                    <Select
+                                        value={searchPath}
+                                        onChange={setSearchPath}
+                                        style={{width: '30%'}}
+                                        options={subDirectories}
+                                        showSearch
+                                        optionFilterProp="label"
+                                    />
+                                    <Search
+                                        placeholder="输入搜索关键词"
+                                        allowClear
+                                        enterButton={<SearchOutlined/>}
+                                        size="middle"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        onSearch={handleSearch}
+                                        loading={loading}
+                                        style={{width: '70%'}}
+                                    />
+                                </Space.Compact>
+                            </div>
+
+                            {/* 搜索历史 */}
+                            {searchHistory.length > 0 && !isSearching && searchResults.length === 0 && (
+                                <Card size="small" title="搜索历史" style={{marginBottom: 16}}>
+                                    {searchHistory.map((item, index) => (
+                                        <Button
+                                            key={index}
+                                            type="link"
+                                            onClick={() => handleHistoryItemClick(item)}
+                                            style={{padding: '4px 8px', height: 'auto'}}
+                                        >
+                                            <HistoryOutlined style={{marginRight: 8}}/>
+                                            {item}
+                                        </Button>
+                                    ))}
+                                </Card>
+                            )}
+
+                            {/* 搜索进度显示 */}
+                            {isSearching && (
+                                <Card size="small" style={{marginBottom: 16}}>
+                                    <div style={{marginBottom: 8}}>
+                                        <Text type="secondary">
+                                            {progress.totalFiles > 0 ? `正在搜索: ${progress.currentFile}/${progress.totalFiles} 个文件` : '正在统计文件数量...'}
+                                        </Text>
+                                    </div>
+                                    <Progress
+                                        percent={progress.totalFiles > 0 ? Math.round((progress.currentFile / progress.totalFiles) * 100) : 0}
+                                        size="small"
+                                        status="active"
+                                    />
+                                    <div style={{marginTop: 8, fontSize: 12}}>
+                                        <Text type="secondary">
+                                            已搜索 {progress.totalLines} 行
+                                        </Text>
+                                    </div>
+                                </Card>
+                            )}
+
+                            {/* 搜索结果统计和排序（紧凑模式，保持在一行） */}
+                            {searchResults.length > 0 && (
+                                <div style={{marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                                    <Space size="small">
+                                        <Statistic
+                                            title=""
+                                            value={searchResults.length}
+                                            valueStyle={{fontSize: 16}}
+                                            suffix="个文件"
+                                        />
+                                        <Statistic
+                                            title=""
+                                            value={totalMatches}
+                                            valueStyle={{fontSize: 16}}
+                                            suffix="条匹配"
+                                        />
+                                    </Space>
+                                    <div style={{display: 'flex', alignItems: 'center', gap: 16}}>
+                                        <Space size="small">
+                                            <Text type="secondary">排序:</Text>
+                                            <Select
+                                                size="small"
+                                                value={sortBy}
+                                                onChange={setSortBy}
+                                                style={{width: 90}}
+                                                options={[
+                                                    {label: '文件名', value: 'name'},
+                                                    {label: '创建时间', value: 'ctime'},
+                                                    {label: '修改时间', value: 'mtime'}
+                                                ]}
+                                            />
+                                        </Space>
+                                        <Button
+                                            type="link"
+                                            size="small"
+                                            onClick={toggleAllCollapse}
+                                            icon={isAllCollapsed ? <DownOutlined/> : <UpOutlined/>}
+                                        >
+                                            {!isAllCollapsed ? '展开' : '折叠'}
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* 搜索结果列表 */}
+                            <div style={{flex: 1, overflow: 'auto'}}>
+                                {sortedResults.length > 0 ? (
+                                    <Collapse
+                                        activeKey={collapsedKeys.map(key => key.toString())}
+                                        onChange={(keys) => setCollapsedKeys(Array.isArray(keys) ? keys : [keys])}
+                                        size="small"
+                                    >
+                                        {sortedResults.map((result, idx) => (
+                                            <Panel
+                                                key={idx.toString()}
+                                                header={
+                                                    <Space>
+                                                        <FileTextOutlined/>
+                                                        <Text strong>{result.fileName}</Text>
+                                                        <Text type="secondary">({result.matches.length} 条匹配)</Text>
+                                                    </Space>
+                                                }
+                                            >
+                                                <div style={{paddingLeft: 24}}>
+                                                    {result.matches.map((match, matchIdx) => (
+                                                        <div key={matchIdx} style={{marginBottom: 12}}>
+                                                            <div style={{marginBottom: 4}}>
+                                                                <Text type="secondary" style={{fontSize: 12}}>第 {match.line} 行:</Text>
+                                                            </div>
+                                                            <div
+                                                                onClick={() => handleResultClick(result.filePath, result.fileName, match.line)}
+                                                                style={{
+                                                                    cursor: 'pointer',
+                                                                    padding: '4px 8px',
+                                                                    background: '#f5f5f5',
+                                                                    borderRadius: '4px',
+                                                                    fontSize: 12,
+                                                                    wordBreak: 'break-word',
+                                                                    transition: 'background 0.2s'
+                                                                }}
+                                                                onMouseEnter={(e) => e.currentTarget.style.background = '#e6f7ff'}
+                                                                onMouseLeave={(e) => e.currentTarget.style.background = '#f5f5f5'}
+                                                            >
+                                                                {highlightText(match.content, searchQuery)}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </Panel>
+                                        ))}
+                                    </Collapse>
+                                ) : isSearching ? null : (
+                                    <div style={{textAlign: 'center', padding: 40, color: '#999'}}>
+                                        <Text type="secondary">输入关键词开始搜索</Text>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </Splitter.Panel>
+
+                {/* 右侧面板 - 预览 */}
                 <Splitter.Panel>
-                    <div style={{height: '100%', display: 'flex', flexDirection: 'column'}}>
+                    <div style={{height: '100%', display: 'flex', flexDirection: 'column', padding: 16}}>
                         {previewFile ? (
-                            <FilePreview
-                                filePath={previewFile.filePath}
-                                fileName={previewFile.fileName}
-                                searchQuery={searchQuery}
-                                onBack={() => setPreviewFile(null)}
-                                onOpenFile={handleOpenFile}
-                            />
+                            <div style={{height: '100%', display: 'flex', flexDirection: 'column'}}>
+                                {/* 预览标题栏 */}
+                                <div style={{
+                                    padding: '8px 16px',
+                                    borderBottom: '1px solid #f0f0f0',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    background: '#fafafa',
+                                    // margin: '-16px -16px 16px -16px'
+                                }}>
+                                    <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
+                                        <FileTextOutlined/>
+                                        <h2 style={{margin: 0, fontSize: '16px', fontWeight: 500}}>
+                                            {previewFile.fileName}
+                                            {previewFile.line && (
+                                                <span style={{color: '#999', fontSize: '14px', marginLeft: '8px'}}>
+                                                    (行 {previewFile.line})
+                                                </span>
+                                            )}
+                                        </h2>
+                                    </div>
+                                    <div style={{display: 'flex', gap: 8, alignItems: 'center'}}>
+                                        <Button
+                                            type="primary"
+                                            size="small"
+                                            onClick={() => handleOpenFile(previewFile.filePath, previewFile.fileName)}
+                                            title="在主视图中打开文件"
+                                        >
+                                            打开文件
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {/* 预览内容 */}
+                                <div style={{flex: 1, overflow: 'auto', backgroundColor: '#fafafa', padding: '16px', borderRadius: '4px'}}>
+                                    {previewLoading ? (
+                                        <Center>
+                                            <Spin size="large"/>
+                                            <div>正在加载文件...</div>
+                                        </Center>
+                                    ) : previewError ? (
+                                        <Center>
+                                            <Empty
+                                                description={previewError}
+                                                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                                            />
+                                        </Center>
+                                    ) : (
+                                        <div style={{
+                                            backgroundColor: '#fff',
+                                            border: '1px solid #e8e8e8',
+                                            borderRadius: '4px',
+                                            padding: '16px'
+                                        }}>
+                                            {content.split('\n').map((line, index) => (
+                                                <CodeLine
+                                                    key={index + 1}
+                                                    lineNumber={index + 1}
+                                                    content={line}
+                                                    searchQuery={searchQuery}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         ) : (
                             <Center>
                                 <div>请选择一个搜索结果进行预览</div>
