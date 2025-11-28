@@ -90,16 +90,22 @@ export const TextViewer: React.FC<TextViewerProps> = ({filePath, fileName}) => {
                 </Space>
 
                 <Space size="large">
-                    <PageSearch cssSelector={'.markdown-source'}/>
-                    <TextToSpeech cssSelector={'.markdown-source'}/>
+                    <PageSearch cssSelector={'.text-content'}/>
+                    <TextToSpeech cssSelector={'.text-content'}/>
                     <FontSizeAdjuster/>
                 </Space>
             </div>
 
-            <div style={{flex: 1, overflow: 'auto', padding: '32px', backgroundColor: 'white'}} className={'markdown-source'}>
-                <pre>
-                    {content}
-                </pre>
+            <div style={{flex: 1, overflow: 'auto', padding: '32px', backgroundColor: 'white'}} className={'text-content'}>
+                {/* 将文本内容按行分割并转换为HTML段落 */}
+                {content.split('\n').map((line, index) => (
+                    <div
+                        key={index}
+                        id={`line-${index}`}
+                    >
+                        {line || '\u00A0' /* 用不间断空格显示空行 */}
+                    </div>
+                ))}
             </div>
         </div>
     );

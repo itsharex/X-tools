@@ -305,3 +305,11 @@
 .katex .katex-mathml {
     display: none;
 }
+
+/*文本内容*/
+.text-content {
+    max-width: 100%;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: var(--markdown-font-size);
+    line-height: 1.6;
+}
