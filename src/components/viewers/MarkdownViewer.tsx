@@ -6,7 +6,6 @@ import {OutlineItem, parseMarkdown} from '../../utils/markdown';
 import {storage, STORAGE_KEYS} from '../../utils/uiUtils';
 import 'highlight.js/styles/github.css';
 import './MarkdownViewer.css';
-// 导入KaTeX样式，这对于数学公式的正确渲染是必需的
 import 'katex/dist/katex.min.css';
 import {Center} from "../common/Center";
 import {Container} from "../common/Container";
@@ -33,6 +32,9 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({filePath, fileNam
     const [html, setHtml] = useState('');
     const [outline, setOutline] = useState<OutlineItem[]>([]);
     const [viewMode, setViewMode] = useState<'rendered' | 'source'>('rendered');
+    const [selectedOutlineKey, setSelectedOutlineKey] = useState<string | null>(null); // 当前选中的大纲项ID
+    const [isUserSelecting, setIsUserSelecting] = useState(false); // 用户是否正在选择大纲项
+    const [lastScrollTop, setLastScrollTop] = useState(0); // 上一次滚动位置，用于避免微小滚动触发更新
     const [error, setError] = useState<string | null>(null);
     const [fontSize, setFontSize] = useState(() => {
         // 从本地存储读取字体大小设置，默认为 16px
@@ -46,25 +48,18 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({filePath, fileNam
     const previewContainerRef = useRef<HTMLDivElement>(null);
     const scrollPollingRef = useRef<NodeJS.Timeout | null>(null);
 
-    // ============================== Font Size Functions ==============================
-    // 字体大小调整函数
-    const increaseFontSize = () => {
-        const newSize = Math.min(fontSize + 2, 48);
-        setFontSize(newSize);
-        storage.set(STORAGE_KEYS.MARKDOWN_FONT_SIZE, newSize);
-    };
-
-    const decreaseFontSize = () => {
-        const newSize = Math.max(fontSize - 2, 12);
-        setFontSize(newSize);
-        storage.set(STORAGE_KEYS.MARKDOWN_FONT_SIZE, newSize);
-    };
-
-    // 当字体大小状态改变时，更新 CSS 变量
+    // ============================== Lifecycle Effects ==============================
+    // 组件卸载时清理定时器
     useEffect(() => {
-        const root = document.documentElement;
-        root.style.setProperty('--markdown-font-size', `${fontSize}px`);
-    }, [fontSize]);
+        return () => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+            if (scrollPollingRef.current) {
+                clearInterval(scrollPollingRef.current);
+            }
+        };
+    }, []);
 
     // ============================== File Loading ==============================
     // 加载 Markdown 文件内容
@@ -99,6 +94,26 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({filePath, fileNam
 
         loadMarkdownFile();
     }, [filePath]);
+
+    // ============================== Font Size Functions ==============================
+    // 字体大小调整函数
+    const increaseFontSize = () => {
+        const newSize = Math.min(fontSize + 2, 48);
+        setFontSize(newSize);
+        storage.set(STORAGE_KEYS.MARKDOWN_FONT_SIZE, newSize);
+    };
+
+    const decreaseFontSize = () => {
+        const newSize = Math.max(fontSize - 2, 12);
+        setFontSize(newSize);
+        storage.set(STORAGE_KEYS.MARKDOWN_FONT_SIZE, newSize);
+    };
+
+    // 当字体大小状态改变时，更新 CSS 变量
+    useEffect(() => {
+        const root = document.documentElement;
+        root.style.setProperty('--markdown-font-size', `${fontSize}px`);
+    }, [fontSize]);
 
     // ============================== Auto Save ==============================
     // 自动保存功能
@@ -200,17 +215,123 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({filePath, fileNam
         }
     }, [loading, viewMode, error, filePath, initialLine]);
 
-    // 组件卸载时清理定时器
+    // ============================== Outline Selection Management ==============================
+    // 监听滚动事件，实现大纲跟随内容滚动
     useEffect(() => {
-        return () => {
-            if (saveTimeoutRef.current) {
-                clearTimeout(saveTimeoutRef.current);
+        const previewContainer = previewContainerRef.current;
+        if (!previewContainer || viewMode !== 'rendered') return;
+
+        // 节流函数，避免频繁触发
+        let ticking = false;
+        // 设置滚动阈值，避免微小滚动触发更新
+        const SCROLL_THRESHOLD = 5; // 5像素的阈值
+
+        const updateOutlineSelection = () => {
+            // 如果用户正在选择大纲项，则不更新选中状态
+            if (isUserSelecting) {
+                return;
             }
-            if (scrollPollingRef.current) {
-                clearInterval(scrollPollingRef.current);
+
+            if (!ticking) {
+                requestAnimationFrame(() => {
+                    // 检查滚动变化是否超过阈值
+                    const currentScrollTop = previewContainer.scrollTop;
+                    const scrollDifference = Math.abs(currentScrollTop - lastScrollTop);
+
+                    // 如果滚动变化小于阈值，则不更新
+                    if (scrollDifference < SCROLL_THRESHOLD) {
+                        ticking = false;
+                        return;
+                    }
+
+                    // 更新上一次滚动位置
+                    setLastScrollTop(currentScrollTop);
+
+                    // 获取所有标题元素
+                    const headings = previewContainer.querySelectorAll('h1, h2, h3, h4, h5, h6');
+                    if (headings.length === 0) return;
+
+                    // 找到当前可视区域中最靠近顶部的标题
+                    let closestHeading: Element | null = null;
+                    let closestDistance = Infinity;
+
+                    headings.forEach(heading => {
+                        const rect = heading.getBoundingClientRect();
+                        const distance = Math.abs(rect.top);
+
+                        // 如果标题在可视区域内且更靠近顶部，则更新closestHeading
+                        if (rect.top >= 0 && rect.top < previewContainer.clientHeight && distance < closestDistance) {
+                            closestDistance = distance;
+                            closestHeading = heading;
+                        }
+                    });
+
+                    // 如果没有找到可视区域内的标题，则找第一个即将进入可视区域的标题
+                    if (!closestHeading) {
+                        headings.forEach(heading => {
+                            const rect = heading.getBoundingClientRect();
+                            // 找到第一个在可视区域下方的标题
+                            if (rect.top > 0 && rect.top < closestDistance) {
+                                closestDistance = rect.top;
+                                closestHeading = heading;
+                            }
+                        });
+                    }
+
+                    // 如果找到了最接近的标题，更新选中的大纲项
+                    if (closestHeading && closestHeading.id) {
+                        setSelectedOutlineKey(closestHeading.id);
+                    } else if (headings.length > 0 && headings[0].id) {
+                        // 默认选中第一个标题
+                        setSelectedOutlineKey(headings[0].id);
+                    }
+
+                    ticking = false;
+                });
+                ticking = true;
             }
         };
-    }, []);
+
+        // 监听滚动事件
+        previewContainer.addEventListener('scroll', updateOutlineSelection);
+
+        // 初始化时也更新一次
+        updateOutlineSelection();
+
+        // 清理事件监听器
+        return () => {
+            previewContainer.removeEventListener('scroll', updateOutlineSelection);
+        };
+    }, [viewMode, outline, isUserSelecting, lastScrollTop]);
+
+    // 监听视图模式变化，在进入源代码模式时取消大纲选中状态
+    useEffect(() => {
+        if (viewMode === 'source') {
+            // 进入源代码模式时，取消大纲选中状态
+            setSelectedOutlineKey(null);
+            // 重置滚动位置跟踪
+            setLastScrollTop(0);
+        }
+        // 当从源代码模式切换回预览模式时，重新初始化大纲选中状态
+        else if (viewMode === 'rendered') {
+            // 重置滚动位置跟踪
+            if (previewContainerRef.current) {
+                setLastScrollTop(previewContainerRef.current.scrollTop);
+            }
+            // 延迟执行以确保DOM已经渲染
+            setTimeout(() => {
+                const previewContainer = previewContainerRef.current;
+                if (previewContainer) {
+                    // 获取所有标题元素
+                    const headings = previewContainer.querySelectorAll('h1, h2, h3, h4, h5, h6');
+                    if (headings.length > 0 && headings[0].id) {
+                        // 默认选中第一个标题
+                        setSelectedOutlineKey(headings[0].id);
+                    }
+                }
+            }, 100);
+        }
+    }, [viewMode]);
 
     // ============================== Markdown Parsing ==============================
     // 解析 Markdown 内容
@@ -401,14 +522,26 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({filePath, fileNam
         };
 
         return flattenItems(items).map(item => ({
-            key: `${item.id}-${item.level}`,
+            key: item.id, // 使用item.id作为key而不是`${item.id}-${item.level}`
             label: (
                 <div
                     style={{paddingLeft: `${item.level * 16}px`}}
                     onClick={(e) => {
                         e.stopPropagation();
                         e.preventDefault();
+                        // 设置用户选择状态为true
+                        setIsUserSelecting(true);
                         handleOutlineClick(item);
+                        // 设置选中的大纲项
+                        setSelectedOutlineKey(item.id);
+                        // 重置滚动位置跟踪
+                        if (previewContainerRef.current) {
+                            setLastScrollTop(previewContainerRef.current.scrollTop);
+                        }
+                        // 较长时间后重置用户选择状态，避免微小滚动干扰
+                        setTimeout(() => {
+                            setIsUserSelecting(false);
+                        }, 2000); // 增加到2秒
                     }}
                 >
                     {item.title}
@@ -524,6 +657,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({filePath, fileNam
                         <Menu
                             mode="inline"
                             items={menuItems}
+                            selectedKeys={selectedOutlineKey ? [selectedOutlineKey] : []} // 设置选中的菜单项
                         />
                     </Splitter.Panel>
 
