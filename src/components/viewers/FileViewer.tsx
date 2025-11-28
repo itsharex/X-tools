@@ -6,6 +6,7 @@ import {ImageViewer} from './ImageViewer';
 import {VideoViewer} from './VideoViewer';
 import {PdfViewer} from './PdfViewer';
 import {MarkdownViewer} from './MarkdownViewer';
+import {TextViewer} from './TextViewer';
 
 interface FilePreviewProps {
     filePath: string;
@@ -31,20 +32,14 @@ export const FileViewer: React.FC<FilePreviewProps> = ({filePath, fileName, init
         return <PdfViewer path={filePath}/>;
     }
 
-    // Markdown  txt 文件使用专门的 MarkdownViewer
-    if (ext === 'md' || ext === 'markdown' || ext === 'txt') {
+    // Markdown 文件使用专门的 MarkdownViewer
+    if (ext === 'md' || ext === 'markdown') {
         return <MarkdownViewer filePath={filePath} fileName={fileName} initialLine={initialLine}/>;
     }
 
-    // 文本文件：用 iframe 直接打开本地文件
+    // 其他文本文件使用 TextViewer
     if (type === 'text') {
-        return (
-            <iframe
-                src={toFileUrl(filePath)}
-                title={fileName}
-                style={{width: '100%', height: '100%', border: 'none', background: '#fff', borderRadius: 8}}
-            />
-        );
+        return <TextViewer filePath={filePath} fileName={fileName}/>;
     }
 
     // 对于不知道该如何打开的，提示
