@@ -76,7 +76,7 @@ const AppContent: React.FC = () => {
 
             // 获取所有父级目录路径并展开它们
             const parentPaths = getAllParentPaths(currentFile.path);
-            const newExpandedKeys = Array.from(new Set([...expandedKeys, ...parentPaths]));
+            const newExpandedKeys = Array.from(new Set([currentFile.path, ...parentPaths]));
             setExpandedKeys(newExpandedKeys);
         } else {
             // 如果没有选中文件，清空选中状态
