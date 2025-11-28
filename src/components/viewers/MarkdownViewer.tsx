@@ -130,17 +130,15 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({filePath, fileNam
         }
     };
 
-    // 处理编辑器内容变化
+    // 处理编辑器内容变化 防抖处理，1.5 秒后自动保存及更新内容
     const handleEditorChange = (value: string) => {
-        setContent(value);
-
-        // 防抖处理，3秒后自动保存
         if (saveTimeoutRef.current) {
             clearTimeout(saveTimeoutRef.current);
         }
         saveTimeoutRef.current = setTimeout(() => {
+            setContent(value);
             saveFile(value);
-        }, 3000);
+        }, 1500);
     };
 
     // ============================== Scroll Position ==============================
