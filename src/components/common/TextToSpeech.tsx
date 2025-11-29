@@ -1,6 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {Button, Space, Tooltip} from 'antd';
 import {LeftOutlined, PauseCircleOutlined, PlayCircleOutlined, RightOutlined} from '@ant-design/icons';
+import {useAppContext} from '../../contexts/AppContext';
 
 interface TextToSpeechProps {
     cssSelector: string; // CSS选择符参数
@@ -63,7 +64,7 @@ const cleanTextForSpeech = (text: string): string => {
 const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
     // 状态管理：使用更清晰的状态设计
     const [isPlaying, setIsPlaying] = useState(false);
-    const [currentIndex, setCurrentIndex] = useState(0);
+    const [currentIndex, setCurrentIndex] = useState(-1); // 将初始值改为-1，避免默认选中第一行
     const [selectedText, setSelectedText] = useState('');
 
     const synthRef = useRef<SpeechSynthesis | null>(null);
@@ -72,6 +73,7 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
     const originalStylesRef = useRef<Map<HTMLElement, string>>(new Map());
     const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const selectedTextRef = useRef(selectedText);// 使用 ref 保存最新的 selectedText 值，解决闭包问题
+    const {currentFile} = useAppContext();
 
     // 状态映射到UI
     const totalCount = elementsRef.current.length;
@@ -204,6 +206,19 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
         synthRef.current?.cancel();
     }, [currentIndex]);
 
+    // 监听文件路径变化，清空状态
+    useEffect(() => {
+        // 每次currentFile变化时都清空状态
+        synthRef.current?.cancel();
+        setIsPlaying(false);
+        setCurrentIndex(-1); // 改为-1，避免默认选中第一行
+        setSelectedText('');
+        restoreOriginalStyles(); // 清除高亮显示
+
+        // 清空元素引用，确保重新计算
+        elementsRef.current = [];
+    }, [currentFile?.path]);
+
     useEffect(() => {
 
         // 如果有选中文本，播放中，就播放
@@ -215,7 +230,8 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
         // 初始化列表，有时候页面会重绘，每次更新一下列表的好
         elementsRef.current = getElementsFromSelector()
 
-        if (elementsRef.current.length > 1 && !selectedText) {
+        // 只有在播放状态下且有有效索引才高亮当前元素
+        if (isPlaying && currentIndex >= 0 && elementsRef.current.length > 1 && !selectedText) {
             const element = elementsRef.current[currentIndex];
             if (element) {
                 element.scrollIntoView({behavior: 'smooth', block: 'center'});
@@ -223,11 +239,11 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
             }
         }
 
-        // 超了的时候，回到第一条
+        // 超了的时候，回到初始状态
         if (currentIndex >= elementsRef.current.length) {
             synthRef.current?.cancel();
             setIsPlaying(false)
-            setCurrentIndex(0);
+            setCurrentIndex(-1); // 改为-1，避免默认选中第一行
             return;
         }
 
@@ -246,7 +262,10 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
 
         let text = selectedText;
         if (!text) {
-            text = elementsRef.current[currentIndex].textContent || '';
+            // 只有在有效索引时才获取文本
+            if (currentIndex >= 0 && currentIndex < elementsRef.current.length) {
+                text = elementsRef.current[currentIndex].textContent || '';
+            }
         }
 
         if (!text) {
@@ -265,7 +284,13 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
                     type="primary"
                     size="small"
                     icon={isPlaying ? <PauseCircleOutlined/> : <PlayCircleOutlined/>}
-                    onClick={() => setIsPlaying(!isPlaying)}
+                    onClick={() => {
+                        // 如果是第一次播放且currentIndex为-1，设置为0
+                        if (!isPlaying && currentIndex === -1) {
+                            setCurrentIndex(0);
+                        }
+                        setIsPlaying(!isPlaying);
+                    }}
                 >
                     {isPlaying ? '暂停' : '播放'}
                 </Button>
@@ -279,14 +304,14 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
                     <Button
                         size="small"
                         icon={<LeftOutlined/>}
-                        onClick={() => setCurrentIndex(currentIndex - 1)}
-                        disabled={!canPlayPrevious}
+                        onClick={() => setCurrentIndex(currentIndex > 0 ? currentIndex - 1 : 0)}
+                        disabled={!canPlayPrevious && currentIndex !== -1}
                     />
                 </Tooltip>
 
                 {/* 当前播放信息 */}
                 <span style={{fontSize: '12px', color: '#666', minWidth: '80px', textAlign: 'center'}}>
-                        {currentIndex + 1} / {totalCount}
+                        {currentIndex >= 0 ? currentIndex + 1 : 1} / {totalCount}
                 </span>
 
                 {/* 下一个按钮 */}
@@ -294,7 +319,10 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
                     <Button
                         size="small"
                         icon={<RightOutlined/>}
-                        onClick={() => setCurrentIndex(currentIndex + 1)}
+                        onClick={() => {
+                            // 如果currentIndex为-1，设置为0，否则递增
+                            setCurrentIndex(currentIndex === -1 ? 0 : currentIndex + 1);
+                        }}
                         disabled={!canPlayNext}
                     />
                 </Tooltip>

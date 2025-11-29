@@ -1,6 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {Button, Input, Space} from 'antd';
 import {LeftOutlined, RightOutlined} from '@ant-design/icons';
+import {useAppContext} from '../../contexts/AppContext';
 
 interface PageSearchProps {
     cssSelector: string; // CSS选择器，用于指定搜索范围
@@ -14,6 +15,7 @@ const PageSearch: React.FC<PageSearchProps> = ({cssSelector}) => {
     const searchInputRef = useRef<any>(null);
     const highlightClass = 'page-search-highlight';
     const currentResultClass = 'current-result';
+    const {currentFile} = useAppContext();
 
     // 切换搜索框显示/隐藏
     const toggleSearch = () => {
@@ -149,6 +151,16 @@ const PageSearch: React.FC<PageSearchProps> = ({cssSelector}) => {
 
         return () => clearTimeout(timeoutId);
     }, [searchText]);
+
+    // 监听文件路径变化，清空搜索状态
+    useEffect(() => {
+        // 每次currentFile变化时都清空搜索状态
+        clearHighlights();
+        setSearchResults([]);
+        setSearchText('');
+        setCurrentResultIndex(0);
+        setIsSearchVisible(false);
+    }, [currentFile?.path]);
 
     // 监听键盘事件
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
