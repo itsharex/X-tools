@@ -20,8 +20,37 @@
 .history-header {
   display: flex;
   align-items: center;
+    justify-content: space-between;
   gap: 8px;
   font-weight: 500;
+}
+
+.history-header .ant-btn.clear-history-btn {
+    margin-left: auto;
+    color: #6b7280;
+    font-size: 12px;
+    padding: 2px 8px;
+    height: auto;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    transition: all 0.15s ease-in-out !important;
+}
+
+.history-header .ant-btn.clear-history-btn:hover {
+    color: #ff4d4f !important;
+    background-color: #fff2f0 !important;
+}
+
+.history-header .ant-btn.clear-history-btn:active {
+    color: #d9363e !important;
+    background-color: #fff1f0 !important;
+}
+
+.history-header .ant-btn.clear-history-btn:focus {
+    color: #6b7280 !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
 }
 
 .history-icon {
