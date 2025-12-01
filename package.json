@@ -2,7 +2,7 @@
   "name": "X-tools",
   "productName": "X-tools",
   "version": "0.1.1",
-  "description": "一个基于 Electron 的本地资料库浏览工具，专为学习者设计。",
+  "description": "一个本地资料库浏览工具。",
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "electron-forge start",

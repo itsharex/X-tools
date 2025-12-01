@@ -1,4 +1,4 @@
-import {app, BrowserWindow, dialog, ipcMain, screen, shell} from 'electron';
+import {app, BrowserWindow, dialog, ipcMain, Menu, screen, shell} from 'electron';
 import {promises as fs} from 'fs';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
@@ -129,7 +129,7 @@ function registerIpcHandlers() {
                     content = iconv.decode(buffer, 'gbk');
                 }
             }
-            
+
             return content;
         } catch (error) {
             console.error('读取文件失败:', error);
@@ -169,7 +169,7 @@ function registerIpcHandlers() {
                 const encodedContent = iconv.encode(content, fileEncoding);
                 await fs.writeFile(filePath, encodedContent);
             }
-            
+
             return true;
         } catch (error) {
             console.error('写入文件失败:', error);
@@ -335,11 +335,55 @@ const createWindow = () => {
     // mainWindow.webContents.openDevTools();
 };
 
+// 创建应用菜单
+function createMenu() {
+    const appName = app.getName();
+
+    const template: any = [
+        {
+            label: appName,
+            submenu: [
+                {
+                    label: '关于 ' + appName,
+                    click: async () => {
+                        const mainWindow = (global as any).mainWindow as BrowserWindow;
+                        if (mainWindow) {
+                            const appVersion = app.getVersion();
+
+                            dialog.showMessageBox(mainWindow, {
+                                type: 'info',
+                                title: '关于',
+                                message: `${appName}\n版本: ${appVersion}\n\n一个本地资料库浏览工具。`,
+                                buttons: ['确定']
+                            });
+                        }
+                    }
+                },
+                {type: 'separator'},
+                {label: '重新加载', role: 'forceReload'},
+                {label: '切换开发者工具', role: 'toggleDevTools'},
+                {type: 'separator'},
+                {
+                    label: '退出',
+                    accelerator: 'CmdOrCtrl+Q',
+                    click() {
+                        app.quit();
+                    }
+                }
+            ]
+        },
+    ];
+
+    const menu = Menu.buildFromTemplate(template);
+    Menu.setApplicationMenu(menu);
+}
+
 // 注册IPC处理程序
 registerIpcHandlers();
 
 app.whenReady().then(() => {
     createWindow();
+    createMenu();
 });
 
 // Quit when all windows are closed, except on macOS. There,
