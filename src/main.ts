@@ -187,6 +187,22 @@ function registerIpcHandlers() {
         }
     });
 
+    // 获取应用版本号
+    ipcMain.handle('getAppVersion', async () => {
+        return app.getVersion();
+    });
+
+    // 获取应用名称
+    ipcMain.handle('getAppName', async () => {
+        return app.getName();
+    });
+
+    // 获取应用描述
+    ipcMain.handle('getAppDescription', async () => {
+        const packageJson = require(path.join(app.getAppPath(), 'package.json'));
+        return packageJson.description;
+    });
+
     // 搜索文件内容 - 使用Worker线程
     ipcMain.handle('searchFilesContent', async (event, dirPath: string, query: string, searchId: string, searchMode: 'content' | 'filename' = 'content') => {
         const {Worker} = require('worker_threads');

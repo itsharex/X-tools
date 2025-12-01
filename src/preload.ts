@@ -52,6 +52,12 @@ interface ElectronAPI {
     writeFile: (filePath: string, content: string) => Promise<boolean>;
     /** 打开外部链接 */
     openExternal: (url: string) => Promise<void>;
+    /** 获取应用版本号 */
+    getAppVersion: () => Promise<string>;
+    /** 获取应用名称 */
+    getAppName: () => Promise<string>;
+    /** 获取应用描述 */
+    getAppDescription: () => Promise<string>;
 }
 
 // 扩展Window接口，使electronAPI全局可用
@@ -90,6 +96,10 @@ const electronAPI: ElectronAPI = {
     readFile: (filePath: string) => ipcRenderer.invoke('readFile', filePath) as Promise<string>,
     writeFile: (filePath: string, content: string) => ipcRenderer.invoke('writeFile', filePath, content) as Promise<boolean>,
     openExternal: (url: string) => ipcRenderer.invoke('openExternal', url) as Promise<void>,
+    // 应用信息
+    getAppVersion: () => ipcRenderer.invoke('getAppVersion') as Promise<string>,
+    getAppName: () => ipcRenderer.invoke('getAppName') as Promise<string>,
+    getAppDescription: () => ipcRenderer.invoke('getAppDescription') as Promise<string>,
 };
 
 // 暴露API给渲染进程

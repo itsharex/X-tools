@@ -1,8 +1,8 @@
 {
-  "name": "x-tools",
-  "productName": "x-tools",
+  "name": "X-tools",
+  "productName": "X-tools",
   "version": "0.1.1",
-  "description": "My Electron application description",
+  "description": "一个基于 Electron 的本地资料库浏览工具，专为学习者设计。",
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "electron-forge start",
