@@ -437,21 +437,21 @@ export const GlobalSearch: React.FC<SearchSplitPanelProps> = ({onClose}) => {
         } else {
             // 同一文件的不同行跳转，只需更新行号和目标行
             setPreviewFile({...previewFile, line});
-
-            // 延迟执行滚动以确保DOM已更新
-            setTimeout(() => {
-                if (line) {
-                    const targetElement = document.getElementById(`line-${line}`);
-                    if (targetElement) {
-                        targetElement.scrollIntoView({behavior: 'smooth', block: 'center'});
-                        targetElement.style.backgroundColor = HIGHLIGHT_COLOR;
-                        setTimeout(() => {
-                            targetElement.style.backgroundColor = '';
-                        }, HIGHLIGHT_DURATION);
-                    }
-                }
-            }, SCROLL_DELAY);
         }
+
+        // 延迟执行滚动以确保DOM已更新
+        setTimeout(() => {
+            if (line) {
+                const targetElement = document.getElementById(`line-${line}`);
+                if (targetElement) {
+                    targetElement.scrollIntoView({behavior: 'smooth', block: 'center'});
+                    targetElement.style.backgroundColor = HIGHLIGHT_COLOR;
+                    setTimeout(() => {
+                        targetElement.style.backgroundColor = '';
+                    }, HIGHLIGHT_DURATION);
+                }
+            }
+        }, SCROLL_DELAY);
     };
 
     // 加载文件内容
