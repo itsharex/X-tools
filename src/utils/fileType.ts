@@ -37,5 +37,5 @@ export function isTextFile(name: string): boolean {
 }
 
 export function toFileUrl(absolutePath: string): string {
-  return 'file://' + encodeURI(absolutePath);
+  return new URL(absolutePath, 'file:').href;
 }

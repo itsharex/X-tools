@@ -306,7 +306,7 @@ const createWindow = () => {
     // 根据屏幕分辨率获取窗口尺寸
     const {width, height} = getWindowSize();
 
-    // Create the browser window.
+    // Create the browser window with platform-specific settings
     const mainWindow = new BrowserWindow({
         width,
         height,
@@ -314,9 +314,18 @@ const createWindow = () => {
             preload: path.join(__dirname, 'preload.js'),
             webSecurity: false, // 可以访问本地文件
         },
-        titleBarStyle: 'hidden',
-        trafficLightPosition: {x: 12, y: 12},
-        ...(process.platform !== 'darwin' ? {titleBarOverlay: true} : {})
+        ...(process.platform === 'darwin' ? {
+            // macOS specific settings
+            titleBarStyle: 'hidden',
+            trafficLightPosition: {x: 12, y: 12}
+        } : {
+            // Windows/Linux specific settings
+            titleBarOverlay: {
+                color: '#ffffff',
+                symbolColor: '#333333',
+                height: 40
+            }
+        })
     });
 
     // 保存窗口引用以便后续控制
@@ -338,10 +347,27 @@ const createWindow = () => {
 // 创建应用菜单
 function createMenu() {
     const appName = app.getName();
+    const isMac = process.platform === 'darwin';
 
-    const template: any = [
+    // 基础菜单项
+    const baseMenu: any[] = [
+        // 窗口菜单（所有平台）
         {
-            label: appName,
+            label: '窗口',
+            submenu: [
+                {label: '最小化', role: 'minimize'},
+                {label: '关闭', role: 'close'},
+                {type: 'separator'},
+                {label: '重新加载', role: 'reload'},
+                {label: '强制重新加载', role: 'forceReload'},
+                {label: '切换开发者工具', role: 'toggleDevTools'},
+                {type: 'separator'},
+                {label: '全部显示', role: 'front'}
+            ]
+        },
+        // 帮助菜单（所有平台）
+        {
+            label: '帮助',
             submenu: [
                 {
                     label: '关于 ' + appName,
@@ -358,23 +384,75 @@ function createMenu() {
                             });
                         }
                     }
-                },
-                {type: 'separator'},
-                {label: '重新加载', role: 'forceReload'},
-                {label: '切换开发者工具', role: 'toggleDevTools'},
-                {type: 'separator'},
-                {
-                    label: '退出',
-                    accelerator: 'CmdOrCtrl+Q',
-                    click() {
-                        app.quit();
-                    }
                 }
             ]
-        },
+        }
     ];
 
-    const menu = Menu.buildFromTemplate(template);
+    let menuTemplate: any[] = [];
+
+    if (isMac) {
+        // macOS 菜单结构
+        menuTemplate = [
+            {
+                label: appName,
+                submenu: [
+                    {
+                        label: '关于 ' + appName,
+                        click: async () => {
+                            const mainWindow = (global as any).mainWindow as BrowserWindow;
+                            if (mainWindow) {
+                                const appVersion = app.getVersion();
+
+                                dialog.showMessageBox(mainWindow, {
+                                    type: 'info',
+                                    title: '关于',
+                                    message: `${appName}\n版本: ${appVersion}\n\n一个本地资料库浏览工具。`,
+                                    buttons: ['确定']
+                                });
+                            }
+                        }
+                    },
+                    {type: 'separator'},
+                    {label: '设置', role: 'preferences'},
+                    {type: 'separator'},
+                    {label: '服务', role: 'services'},
+                    {type: 'separator'},
+                    {label: '隐藏 ' + appName, role: 'hide'},
+                    {label: '隐藏其他', role: 'hideOthers'},
+                    {label: '显示全部', role: 'unhide'},
+                    {type: 'separator'},
+                    {
+                        label: '退出',
+                        accelerator: 'Cmd+Q',
+                        click() {
+                            app.quit();
+                        }
+                    }
+                ]
+            },
+            ...baseMenu
+        ];
+    } else {
+        // Windows/Linux 菜单结构
+        menuTemplate = [
+            {
+                label: '文件',
+                submenu: [
+                    {
+                        label: '退出',
+                        accelerator: 'Ctrl+Q',
+                        click() {
+                            app.quit();
+                        }
+                    }
+                ]
+            },
+            ...baseMenu
+        ];
+    }
+
+    const menu = Menu.buildFromTemplate(menuTemplate);
     Menu.setApplicationMenu(menu);
 }
 

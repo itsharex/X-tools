@@ -1,4 +1,18 @@
 import {unified} from 'unified';
+
+// 浏览器兼容的路径处理函数
+function dirname(filePath: string): string {
+    // 处理不同平台的路径分隔符
+    const parts = filePath.split(/[/\\]/);
+    parts.pop();
+    return parts.join('/');
+}
+
+function join(...paths: string[]): string {
+    // 处理不同平台的路径分隔符
+    const normalizedPaths = paths.map(path => path.replace(/\\/g, '/'));
+    return normalizedPaths.join('/');
+}
 import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import rehypeStringify from 'rehype-stringify';
@@ -97,8 +111,19 @@ export async function parseMarkdown(markdown: string, filePath = ''): Promise<Ma
             visit(tree, 'image', (node) => {
                 try {
                     console.log('image', node.url, filePath);
-                    if (!node.url.startsWith('http'))
-                        node.url = "file://" + (filePath ? filePath.substring(0, filePath.lastIndexOf('/') + 1) : "") + node.url;
+                    if (!node.url.startsWith('http')) {
+                        if (filePath) {
+                            // 获取文件所在目录的绝对路径
+                            const dirPath = dirname(filePath);
+                            // 构造完整的文件路径
+                            const imagePath = join(dirPath, node.url);
+                            // 使用 new URL() 构造 file URL
+                            node.url = new URL(imagePath, 'file:').href;
+                        } else {
+                            // 如果没有文件路径，直接使用 file URL
+                            node.url = new URL(node.url, 'file:').href;
+                        }
+                    }
                     console.log('image now', node);
                 } catch (error) {
                     console.error('解析 image 失败:', error);

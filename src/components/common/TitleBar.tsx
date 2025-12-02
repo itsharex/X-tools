@@ -6,6 +6,13 @@ import {truncateFolderName} from '../../utils/uiUtils';
 import {Config, removeFolderPath, updateFolderPath} from "../../utils/config";
 import {RecentFolder} from '../../types';
 
+// 浏览器兼容的basename函数
+function basename(path: string): string {
+    // 处理不同平台的路径分隔符
+    const parts = path.split(/[/\\]/);
+    return parts[parts.length - 1] || '';
+}
+
 export const TitleBar: React.FC = () => {
     const {
         currentFolder,
@@ -179,13 +186,13 @@ export const TitleBar: React.FC = () => {
                                 type="link"
                                 loading={loading}
                             >
-                                {currentFolder ? truncateFolderName(currentFolder.split('/').pop() || '') : '选择文件夹'} <DownOutlined/>
+                                {currentFolder ? truncateFolderName(basename(currentFolder)) : '选择文件夹'} <DownOutlined/>
                             </Button>
                         </Dropdown>
                     </div>
                     <div style={{flex: '1 3 auto', minWidth: 0}}>
                         <div className="one-line text-center">
-                            {currentFile ? currentFile.split('/').pop() : ''}
+                            {currentFile ? basename(currentFile) : ''}
                         </div>
                     </div>
                     <div style={{

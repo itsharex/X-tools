@@ -1,10 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import os from 'node:os';
+import {app} from 'electron';
 import {Config} from "./config";
 
-// 配置文件路径
-const CONFIG_DIR = path.join(os.homedir(), '.x-tools');
+// 配置文件路径 - 使用Electron提供的平台特定用户数据目录
+const CONFIG_DIR = app.getPath('userData');
 const CONFIG_FILE = path.join(CONFIG_DIR, 'config.json');
 
 // 默认配置
