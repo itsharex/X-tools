@@ -382,6 +382,9 @@ function createMenu() {
 registerIpcHandlers();
 
 app.whenReady().then(() => {
+    // 显示软件版本号，Electron 版本号
+    console.log(`${app.getName()} ${app.getVersion()} - Electron ${process.versions.electron}`);
+
     createWindow();
     createMenu();
 });
