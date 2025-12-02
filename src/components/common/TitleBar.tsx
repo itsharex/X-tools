@@ -36,6 +36,7 @@ export const TitleBar: React.FC = () => {
 
             if (dirPath && config) {
                 setConfig(updateFolderPath(config, dirPath));
+                setCurrentFolder(dirPath);
             }
         } catch (error) {
             console.error('选择文件夹失败:', error);
