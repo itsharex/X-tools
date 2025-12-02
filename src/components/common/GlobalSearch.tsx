@@ -81,7 +81,7 @@ const CodeLine: React.FC<{
     };
 
     return (<div
-        id={`line-${lineNumber}`}
+        id={`search-preview-line-${lineNumber}`}
         style={{
             display: 'flex', padding: '2px 0', borderBottom: '1px solid #f0f0f0', transition: 'background-color 0.3s'
         }}
@@ -452,7 +452,7 @@ export const GlobalSearch: React.FC<SearchSplitPanelProps> = ({onClose}) => {
         // 延迟执行滚动以确保DOM已更新
         setTimeout(() => {
             if (line) {
-                const targetElement = document.getElementById(`line-${line}`);
+                const targetElement = document.getElementById(`search-preview-line-${line}`);
                 if (targetElement) {
                     targetElement.scrollIntoView({behavior: 'smooth', block: 'center'});
                     targetElement.style.backgroundColor = HIGHLIGHT_COLOR;
