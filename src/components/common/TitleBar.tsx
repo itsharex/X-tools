@@ -14,6 +14,19 @@ function basename(path: string): string {
 }
 
 export const TitleBar: React.FC = () => {
+    const [isMac, setIsMac] = useState(false);
+
+    // 初始化时获取平台信息
+    useEffect(() => {
+        const getPlatformInfo = async () => {
+            if (window.electronAPI) {
+                const isMacPlatform = await window.electronAPI.getIsMac();
+                setIsMac(isMacPlatform);
+            }
+        };
+
+        getPlatformInfo();
+    }, []);
     const {
         currentFolder,
         currentFile,
@@ -108,7 +121,7 @@ export const TitleBar: React.FC = () => {
                     style={{height: 40, position: 'relative', zIndex: 100}}
                     align={'center'}
                 >
-                    <div style={{flex: '0 0 72px'}}></div>
+                    {isMac && <div style={{flex: '0 0 72px'}}></div>}
                     <div style={{paddingRight: 16}}>
                         <Dropdown
                             menu={{

@@ -16,6 +16,9 @@ if (started) {
 // 用于存储当前活动的搜索Worker线程
 const activeSearchWorkers = new Map<string, any>();
 
+// 平台检测
+const isMac = process.platform === 'darwin';
+
 // 注册所有IPC处理程序
 function registerIpcHandlers() {
     // 处理文件夹选择对话框请求
@@ -203,6 +206,11 @@ function registerIpcHandlers() {
         return packageJson.description;
     });
 
+    // 获取当前平台是否为Mac
+    ipcMain.handle('getIsMac', async () => {
+        return isMac;
+    });
+
     // 搜索文件内容 - 使用Worker线程
     ipcMain.handle('searchFilesContent', async (event, dirPath: string, query: string, searchId: string, searchMode: 'content' | 'filename' = 'content') => {
         const {Worker} = require('worker_threads');
@@ -347,7 +355,6 @@ const createWindow = () => {
 // 创建应用菜单
 function createMenu() {
     const appName = app.getName();
-    const isMac = process.platform === 'darwin';
 
     // 基础菜单项
     const baseMenu: any[] = [
