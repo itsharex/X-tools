@@ -30,13 +30,23 @@ const formatNumber = (num: number): string => {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 };
 
-// 简单的路径处理函数
+// 平台无关的路径处理函数
 const dirname = (path: string): string => {
-    return path.substring(0, path.lastIndexOf('/'));
+    // 使用平台无关的路径分隔符处理
+    const lastSeparatorIndex = Math.max(
+        path.lastIndexOf('/'),
+        path.lastIndexOf('\\')
+    );
+    return lastSeparatorIndex === -1 ? path : path.substring(0, lastSeparatorIndex);
 };
 
 const basename = (path: string): string => {
-    return path.substring(path.lastIndexOf('/') + 1);
+    // 使用平台无关的路径分隔符处理
+    const lastSeparatorIndex = Math.max(
+        path.lastIndexOf('/'),
+        path.lastIndexOf('\\')
+    );
+    return lastSeparatorIndex === -1 ? path : path.substring(lastSeparatorIndex + 1);
 };
 
 // 代码行组件
@@ -657,7 +667,16 @@ export const GlobalSearch: React.FC<SearchSplitPanelProps> = ({onClose}) => {
                                             header={<Space>
                                                 <FolderOutlined/>
                                                 <Text
-                                                    strong>{folder === searchPath ? '/' : folder.startsWith(searchPath) ? folder.substring(searchPath.length + 1) || '/' : basename(folder)}</Text>
+                                                    strong>{folder === searchPath ? '/' : folder.startsWith(searchPath) ? (() => {
+                                                        // 计算相对路径，处理不同平台的路径分隔符
+                                                        const searchPathLength = searchPath.length;
+                                                        let relativePath = folder.substring(searchPathLength);
+                                                        // 移除开头的路径分隔符
+                                                        if (relativePath.startsWith('/') || relativePath.startsWith('\\')) {
+                                                            relativePath = relativePath.substring(1);
+                                                        }
+                                                        return relativePath || '/';
+                                                    })() : basename(folder)}</Text>
                                                 <Text type="secondary">
                                                     ({folderGroups[folder].length} 个文件
                                                     {searchMode === 'content' && (
