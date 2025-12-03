@@ -277,9 +277,19 @@ export const TitleBar: React.FC = () => {
                                             window.electronAPI.closeWindow();
                                         }
                                     }}
-                                    style={{padding: 0, width: 36, height: 36, borderRadius: 0, color: '#ff4d4f'}}
+                                    style={{ padding: 0, width: 36, height: 36, borderRadius: 0, color: '#000000' }}
+                                    onMouseEnter={(e) => {
+                                        const target = e.currentTarget;
+                                        target.style.backgroundColor = '#ff4d4f';
+                                        target.style.color = '#ffffff';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        const target = e.currentTarget;
+                                        target.style.backgroundColor = 'transparent';
+                                        target.style.color = '#000000';
+                                    }}
                                 >
-                                    <span style={{fontSize: '16px', lineHeight: '1'}}>×</span>
+                                    <span style={{ fontSize: '16px', lineHeight: '1' }}>×</span>
                                 </Button>
                             </div>
                         )}
