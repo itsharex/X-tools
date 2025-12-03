@@ -21,6 +21,7 @@ export const FileTree: React.FC = () => {
 
     // 监听currentFile的变化并更新树节点选中状态
     useEffect(() => {
+        if (selectedKeys.includes(currentFile)) return; // 避免重复更新
         // 延后更新，让视图先渲染
         setTimeout(() => {
             if (currentFile && fileList.length > 0) {
@@ -59,7 +60,7 @@ export const FileTree: React.FC = () => {
                 setSelectedKeys([]);
             }
         }, 500)
-    }, [currentFile]);
+    }, [currentFile, fileList]);
 
     // 当文件夹改变时加载文件列表
     useEffect(() => {
@@ -133,8 +134,10 @@ export const FileTree: React.FC = () => {
     // 点击选中
     const handleTreeSelect: TreeProps<TreeNodeWithMeta>['onSelect'] = async (keys, info) => {
         const nodeMeta: FileNode | undefined = info.node.meta;
-        if (!nodeMeta.isDirectory) setCurrentFile(nodeMeta.path);
-        setSelectedKeys([nodeMeta.path])
+        if (!nodeMeta.isDirectory) {
+            setCurrentFile(nodeMeta.path);
+            setSelectedKeys([nodeMeta.path])
+        }
     };
 
     // 处理树节点展开/折叠
