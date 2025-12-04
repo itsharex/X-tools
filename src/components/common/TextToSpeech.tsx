@@ -88,8 +88,8 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
         // 1. 寻找第一个可见头部的元素
         for (let i = 0; i < targetElements.length; i++) {
             const rect = targetElements[i].getBoundingClientRect();
-            // 头部可见：top 在视口内
-            if (rect.top >= 0 && rect.top <= window.innerHeight) {
+            // 头部可见：top 在视口内，80 是考虑两层标题栏影响
+            if (rect.top >= 80 && rect.top <= window.innerHeight) {
                 return i;
             }
         }
