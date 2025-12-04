@@ -444,8 +444,12 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({filePath, fileNam
                 </div>
 
                 <Space size="large">
-                    <PageSearch cssSelector={viewMode === 'rendered' ? '.markdown-content' : '.markdown-source .cm-line'}/>
-                    <Speaker cssSelector={'.markdown-content,.markdown-source .cm-line'}/>
+                    {viewMode === 'rendered' && (
+                        <>
+                            <PageSearch cssSelector={'.markdown-content'}/>
+                            <Speaker cssSelector={'.markdown-content'}/>
+                        </>
+                    )}
 
                     <FontSizeAdjuster/>
 

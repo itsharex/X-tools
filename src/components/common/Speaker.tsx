@@ -1,7 +1,7 @@
-import React, {useEffect, useRef, useState} from 'react';
-import {Button, Space, Tooltip} from 'antd';
-import {LeftOutlined, PauseCircleOutlined, PlayCircleOutlined, RightOutlined} from '@ant-design/icons';
-import {useAppContext} from '../../contexts/AppContext';
+import React, { useEffect, useRef, useState } from 'react';
+import { Button, Space, Tooltip } from 'antd';
+import { LeftOutlined, PauseCircleOutlined, PlayCircleOutlined, RightOutlined } from '@ant-design/icons';
+import { useAppContext } from '../../contexts/AppContext';
 
 interface TextToSpeechProps {
     cssSelector: string; // CSS选择符参数
@@ -61,7 +61,7 @@ const cleanTextForSpeech = (text: string): string => {
  * 语音播放组件
  * 接收CSS选择符参数，实现语音朗读功能
  */
-const Speaker: React.FC<TextToSpeechProps> = ({cssSelector}) => {
+const Speaker: React.FC<TextToSpeechProps> = ({ cssSelector }) => {
     // 状态管理
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentIndex, setCurrentIndex] = useState(-1); // 初始值为-1，避免默认选中第一行
@@ -74,7 +74,7 @@ const Speaker: React.FC<TextToSpeechProps> = ({cssSelector}) => {
     const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const selectedTextRef = useRef(selectedText); // 保存最新的选中文本，解决闭包问题
 
-    const {currentFile} = useAppContext();
+    const { currentFile } = useAppContext();
 
     /**
      * 获取视口内第一个可见头部的元素索引，如果没有则找可见尾部的元素
@@ -328,7 +328,7 @@ const Speaker: React.FC<TextToSpeechProps> = ({cssSelector}) => {
         if (isPlaying && currentIndex >= 0 && elements.length > 1 && !selectedText) {
             const element = elements[currentIndex];
             if (element) {
-                element.scrollIntoView({behavior: 'smooth', block: 'center'});
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 highlightCurrentElement(currentIndex);
             }
         }
@@ -375,7 +375,7 @@ const Speaker: React.FC<TextToSpeechProps> = ({cssSelector}) => {
                 <Button
                     type="primary"
                     size="small"
-                    icon={isPlaying ? <PauseCircleOutlined/> : <PlayCircleOutlined/>}
+                    icon={isPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
                     onClick={() => {
                         // 如果是第一次播放且currentIndex为-1，设置为当前可见元素的索引
                         if (!isPlaying) {
@@ -395,34 +395,28 @@ const Speaker: React.FC<TextToSpeechProps> = ({cssSelector}) => {
                 </Button>
             </Tooltip>
 
-            {selectedText
-                ? (
-                    <span style={{backgroundColor: 'lightgray', padding: '4px'}}>
-                        {selectedText.substring(0, 2)}...
-                    </span>
-                )
-                : currentIndex !== -1 && (
+            {isPlaying && selectedText === '' && (
                 <>
                     {/* 上一个按钮 */}
                     <Tooltip title="上一个">
                         <Button
                             size="small"
-                            icon={<LeftOutlined/>}
+                            icon={<LeftOutlined />}
                             onClick={() => setCurrentIndex(currentIndex > 0 ? currentIndex - 1 : 0)}
                             disabled={!(elements.length > 0 && currentIndex > 0)}
                         />
                     </Tooltip>
 
                     {/* 当前播放信息 */}
-                    <span style={{fontSize: '12px', color: '#666', minWidth: '80px', textAlign: 'center'}}>
-                            {currentIndex >= 0 ? currentIndex + 1 : 1} / {elements.length}
-                        </span>
+                    <span style={{ fontSize: '12px', color: '#666', minWidth: '80px', textAlign: 'center' }}>
+                        {currentIndex >= 0 ? currentIndex + 1 : 1} / {elements.length}
+                    </span>
 
                     {/* 下一个按钮 */}
                     <Tooltip title="下一个">
                         <Button
                             size="small"
-                            icon={<RightOutlined/>}
+                            icon={<RightOutlined />}
                             onClick={() => {
                                 // 如果currentIndex为-1，设置为0，否则递增
                                 setCurrentIndex(currentIndex === -1 ? 0 : currentIndex + 1);
