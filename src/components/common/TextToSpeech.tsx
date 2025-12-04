@@ -62,17 +62,18 @@ const cleanTextForSpeech = (text: string): string => {
  * 接收CSS选择符参数，实现语音朗读功能
  */
 const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
-    // 状态管理：使用更清晰的状态设计
+    // 状态管理
     const [isPlaying, setIsPlaying] = useState(false);
-    const [currentIndex, setCurrentIndex] = useState(-1); // 将初始值改为-1，避免默认选中第一行
+    const [currentIndex, setCurrentIndex] = useState(-1); // 初始值为-1，避免默认选中第一行
     const [selectedText, setSelectedText] = useState('');
+    const [elements, setElements] = useState<HTMLElement[]>([]);
 
     const synthRef = useRef<SpeechSynthesis | null>(null);
     const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-    const [elements, setElements] = useState<HTMLElement[]>([]); // 将 ref 改为状态
     const originalStylesRef = useRef<Map<HTMLElement, string>>(new Map());
     const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
-    const selectedTextRef = useRef(selectedText);// 使用 ref 保存最新的 selectedText 值，解决闭包问题
+    const selectedTextRef = useRef(selectedText); // 保存最新的选中文本，解决闭包问题
+
     const {currentFile} = useAppContext();
 
     /**
@@ -83,7 +84,7 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
     const getFirstVisibleElementIndex = (elementsList?: HTMLElement[]): number => {
         const targetElements = elementsList || elements;
         if (targetElements.length === 0) return 0;
-        
+
         // 1. 寻找第一个可见头部的元素
         for (let i = 0; i < targetElements.length; i++) {
             const rect = targetElements[i].getBoundingClientRect();
@@ -92,7 +93,7 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
                 return i;
             }
         }
-        
+
         // 2. 如果没有可见头部的元素，寻找第一个可见尾部的元素
         for (let i = 0; i < targetElements.length; i++) {
             const rect = targetElements[i].getBoundingClientRect();
@@ -101,7 +102,7 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
                 return i;
             }
         }
-        
+
         // 3. 如果以上都没有找到，回退到原始逻辑
         for (let i = 0; i < targetElements.length; i++) {
             const rect = targetElements[i].getBoundingClientRect();
@@ -109,28 +110,25 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
                 return i;
             }
         }
-        
+
         return 0;
     };
 
-    console.log('status:', isPlaying, currentIndex, elements.length, selectedText);
-
-    // 处理文本选中
-    const handlerSelectedText = () => {
+    /**
+     * 处理文本选中
+     */
+    const handleSelectedText = () => {
         const selected = window.getSelection()?.toString().trim() || '';
         const currentSelectedText = selectedTextRef.current;
 
-        console.log('handlerSelectedText', selected, ' --- ', currentSelectedText);
         setSelectedText(selected);
 
         // 如果选中文本有变化，停止当前播放，让用户可以点击播放选中文本
         if (selected !== currentSelectedText) {
-            console.log('重置播放状态 selected', selected);
             synthRef.current?.cancel();
-            setIsPlaying(false)
+            setIsPlaying(false);
         }
-    }
-
+    };
 
     /**
      * 恢复原始样式
@@ -162,46 +160,46 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
     /**
      * 检查当前元素是否需要重新定位（索引无效、元素不可见或不是头部可见元素）
      * @param index 当前元素索引
-     * @param elements 元素列表
+     * @param elementsList 元素列表
      * @returns 是否需要重新定位
      */
-    const shouldRepositionElement = (index: number, elements: HTMLElement[]): boolean => {
+    const shouldRepositionElement = (index: number, elementsList: HTMLElement[]): boolean => {
         // 索引无效，需要重新定位
-        if (index < 0 || index >= elements.length) {
+        if (index < 0 || index >= elementsList.length) {
             return true;
         }
-        
-        const element = elements[index];
+
+        const element = elementsList[index];
         if (!element) {
             return true;
         }
-        
+
         // 获取元素的位置信息
         const rect = element.getBoundingClientRect();
-        
+
         // 完全不可见的条件：元素底部在视口顶部之上，或元素顶部在视口底部之下
         const isCompletelyInvisible = rect.bottom < 0 || rect.top > window.innerHeight;
-        
+
         // 如果元素完全不可见，需要重新定位
         if (isCompletelyInvisible) {
             return true;
         }
-        
+
         // 检查当前元素是否是头部可见的元素（优先播放头部可见元素）
         const isCurrentElementHeadVisible = rect.top >= 0 && rect.top <= window.innerHeight;
-        
+
         // 如果当前元素不是头部可见的元素，检查是否存在头部可见的元素
         if (!isCurrentElementHeadVisible) {
             // 寻找是否存在头部可见的元素
-            for (let i = 0; i < elements.length; i++) {
-                const elementRect = elements[i].getBoundingClientRect();
+            for (let i = 0; i < elementsList.length; i++) {
+                const elementRect = elementsList[i].getBoundingClientRect();
                 if (elementRect.top >= 0 && elementRect.top <= window.innerHeight) {
                     // 存在头部可见的元素，但当前元素不是，需要重新定位
                     return true;
                 }
             }
         }
-        
+
         // 元素完全可见，且是头部可见的元素（或没有头部可见的元素），不需要重新定位
         return false;
     };
@@ -226,7 +224,10 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
         return Array.from(elements);
     };
 
-    // 播放
+    /**
+     * 播放语音
+     * @param text 要播放的文本
+     */
     const play = (text = '') => {
         // 创建新的语音实例
         const utterance = new SpeechSynthesisUtterance(cleanTextForSpeech(text));
@@ -236,7 +237,6 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
         utterance.volume = 1;
 
         utterance.onend = () => {
-            console.log('utterance end', currentIndex, utterance);
             // 朗读完毕，如果是选中文本，就停止播放；否则继续下一个
             if (selectedText) {
                 setIsPlaying(false);
@@ -247,17 +247,17 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
         };
 
         utterance.onerror = (e) => {
-            console.log('utterance error', currentIndex, utterance, e);
+            console.error('语音播放错误:', e);
         };
 
         utteranceRef.current = utterance;
 
         synthRef.current?.cancel();
-        // 延后开始播放，否则，cancel 引发的异常会打断当前播放。
+        // 延后开始播放，避免cancel引发的异常打断当前播放
         setTimeout(() => {
             synthRef.current?.speak(utterance);
-        }, 150)
-    }
+        }, 150);
+    };
 
     // 初始化语音合成实例、轮询和滚动监听
     useEffect(() => {
@@ -265,7 +265,7 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
 
         // 启动选中文本轮询
         pollIntervalRef.current = setInterval(() => {
-            handlerSelectedText()
+            handleSelectedText();
         }, 1000);
 
         // 添加滚动事件监听，当页面滚动时检查当前元素的可见性
@@ -293,12 +293,12 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
         };
     }, [isPlaying, selectedText, elements, currentIndex]);
 
-    // 当 selectedText 状态变化时，更新 ref 的值
+    // 当selectedText状态变化时，更新ref的值
     useEffect(() => {
-        // console.log('selected text change')
         selectedTextRef.current = selectedText;
     }, [selectedText]);
 
+    // 当currentIndex变化时，取消当前播放
     useEffect(() => {
         synthRef.current?.cancel();
     }, [currentIndex]);
@@ -308,7 +308,7 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
         // 每次currentFile变化时都清空状态
         synthRef.current?.cancel();
         setIsPlaying(false);
-        setCurrentIndex(-1); // 改为-1，避免默认选中第一行
+        setCurrentIndex(-1);
         setSelectedText('');
         restoreOriginalStyles(); // 清除高亮显示
 
@@ -316,9 +316,9 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
         setElements([]);
     }, [currentFile]);
 
+    // 核心播放逻辑
     useEffect(() => {
-
-        // 如果有选中文本，播放中，就播放
+        // 如果有选中文本且处于播放状态，播放选中文本
         if (isPlaying && selectedText) {
             play(selectedText);
             return;
@@ -333,43 +333,41 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
             }
         }
 
-        // 超了的时候，回到初始状态
+        // 播放结束时，回到初始状态
         if (currentIndex >= elements.length) {
             synthRef.current?.cancel();
-            setIsPlaying(false)
-            setCurrentIndex(-1); // 改为-1，避免默认选中第一行
+            setIsPlaying(false);
+            setCurrentIndex(-1);
             return;
         }
 
-        console.log('change', isPlaying, currentIndex, elements.length, selectedText);
-
+        // 暂停状态处理
         if (!isPlaying) {
-            if (synthRef.current.speaking) synthRef.current?.pause();
+            if (synthRef.current?.speaking) {
+                synthRef.current.pause();
+            }
             return;
         }
 
-        // 当播放时被暂停，恢复播放。这两个状态挺耐人寻味。
-        if (synthRef.current.paused && synthRef.current.speaking) {
+        // 恢复播放处理
+        if (synthRef.current?.paused && synthRef.current?.speaking) {
             synthRef.current.resume();
             return;
         }
 
+        // 播放当前索引的文本
         let text = selectedText;
-        if (!text) {
-            // 只有在有效索引时才获取文本
-            if (currentIndex >= 0 && currentIndex < elements.length) {
-                text = elements[currentIndex].textContent || '';
-            }
+        if (!text && currentIndex >= 0 && currentIndex < elements.length) {
+            text = elements[currentIndex].textContent || '';
         }
 
         if (!text) {
-            setCurrentIndex(currentIndex + 1)
+            setCurrentIndex(currentIndex + 1);
             return;
         }
 
         play(text);
-    }, [isPlaying, currentIndex, elements]);
-
+    }, [isPlaying, currentIndex, elements, selectedText]);
 
     return (
         <Space size="small">
@@ -384,7 +382,7 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
                             // 先获取元素列表并设置到状态中
                             const elementsList = getElementsFromSelector();
                             setElements(elementsList);
-                            // 如果当前元素不可见，找到第一个可见元素的索引 
+                            // 如果当前元素不可见，找到第一个可见元素的索引
                             if (shouldRepositionElement(currentIndex, elementsList)) {
                                 const firstVisibleIndex = getFirstVisibleElementIndex(elementsList);
                                 setCurrentIndex(firstVisibleIndex);
@@ -398,36 +396,42 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({cssSelector}) => {
             </Tooltip>
 
             {selectedText
-                ? <span style={{backgroundColor: 'lightgray', padding: '4px'}}>{selectedText.substring(0, 2)}...</span>
-                : currentIndex !== -1 && (<>
-                {/* 上一个按钮 */}
-                <Tooltip title="上一个">
-                    <Button
-                        size="small"
-                        icon={<LeftOutlined/>}
-                        onClick={() => setCurrentIndex(currentIndex > 0 ? currentIndex - 1 : 0)}
-                        disabled={!(elements.length > 0 && currentIndex > 0) && currentIndex !== -1}
-                    />
-                </Tooltip>
+                ? (
+                    <span style={{backgroundColor: 'lightgray', padding: '4px'}}>
+                        {selectedText.substring(0, 2)}...
+                    </span>
+                )
+                : currentIndex !== -1 && (
+                <>
+                    {/* 上一个按钮 */}
+                    <Tooltip title="上一个">
+                        <Button
+                            size="small"
+                            icon={<LeftOutlined/>}
+                            onClick={() => setCurrentIndex(currentIndex > 0 ? currentIndex - 1 : 0)}
+                            disabled={!(elements.length > 0 && currentIndex > 0)}
+                        />
+                    </Tooltip>
 
-                {/* 当前播放信息 */}
-                <span style={{fontSize: '12px', color: '#666', minWidth: '80px', textAlign: 'center'}}>
-                        {currentIndex >= 0 ? currentIndex + 1 : 1} / {elements.length}
-                </span>
+                    {/* 当前播放信息 */}
+                    <span style={{fontSize: '12px', color: '#666', minWidth: '80px', textAlign: 'center'}}>
+                            {currentIndex >= 0 ? currentIndex + 1 : 1} / {elements.length}
+                        </span>
 
-                {/* 下一个按钮 */}
-                <Tooltip title="下一个">
-                    <Button
-                        size="small"
-                        icon={<RightOutlined/>}
-                        onClick={() => {
-                            // 如果currentIndex为-1，设置为0，否则递增
-                            setCurrentIndex(currentIndex === -1 ? 0 : currentIndex + 1);
-                        }}
-                        disabled={!(elements.length > 0 && currentIndex < elements.length - 1)}
-                    />
-                </Tooltip>
-            </>)
+                    {/* 下一个按钮 */}
+                    <Tooltip title="下一个">
+                        <Button
+                            size="small"
+                            icon={<RightOutlined/>}
+                            onClick={() => {
+                                // 如果currentIndex为-1，设置为0，否则递增
+                                setCurrentIndex(currentIndex === -1 ? 0 : currentIndex + 1);
+                            }}
+                            disabled={!(elements.length > 0 && currentIndex < elements.length - 1)}
+                        />
+                    </Tooltip>
+                </>
+            )
             }
         </Space>
     );
