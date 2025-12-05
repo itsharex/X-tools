@@ -1,15 +1,15 @@
-import React, {useEffect, useRef, useState} from 'react';
-import {Button, Input} from 'antd';
-import type {InputRef} from 'antd/es/input';
-import {CloseOutlined, LeftOutlined, RightOutlined, SearchOutlined} from '@ant-design/icons';
-import {useAppContext} from '../../contexts/AppContext';
-import {getSelectedText} from '../../utils/format';
+import React, { useEffect, useRef, useState } from 'react';
+import { Button, Input, Space } from 'antd';
+import type { InputRef } from 'antd/es/input';
+import { CloseOutlined, LeftOutlined, RightOutlined, SearchOutlined } from '@ant-design/icons';
+import { useAppContext } from '../../contexts/AppContext';
+import { getSelectedText } from '../../utils/format';
 
 interface PageSearchProps {
     cssSelector: string; // CSS选择器，用于指定搜索范围
 }
 
-const PageSearch: React.FC<PageSearchProps> = ({cssSelector}) => {
+const PageSearch: React.FC<PageSearchProps> = ({ cssSelector }) => {
     // 常量定义
     const HIGHLIGHT_CLASS = 'page-search-highlight';
     const CURRENT_RESULT_CLASS = 'current-result';
@@ -66,7 +66,7 @@ const PageSearch: React.FC<PageSearchProps> = ({cssSelector}) => {
 
 
     // 上下文
-    const {currentFile} = useAppContext();
+    const { currentFile } = useAppContext();
 
     // 转义正则表达式特殊字符
     const escapeRegExp = (string: string): string => {
@@ -127,7 +127,7 @@ const PageSearch: React.FC<PageSearchProps> = ({cssSelector}) => {
         const highlightedElements = document.querySelectorAll(`.${HIGHLIGHT_CLASS}`);
         if (highlightedElements.length > 0 && index >= 0 && index < highlightedElements.length) {
             const element = highlightedElements[index] as HTMLElement;
-            element.scrollIntoView({behavior: 'smooth', block: 'center'});
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
             // 更新当前结果的样式
             highlightedElements.forEach((el, i) => {
@@ -320,7 +320,7 @@ const PageSearch: React.FC<PageSearchProps> = ({cssSelector}) => {
                 <Button
                     onClick={toggleSearch}
                     type="text"
-                    icon={<SearchOutlined/>}
+                    icon={<SearchOutlined />}
                     style={SEARCH_BUTTON_STYLE}
                 />
             ) : (
@@ -334,21 +334,21 @@ const PageSearch: React.FC<PageSearchProps> = ({cssSelector}) => {
                         style={SEARCH_INPUT_STYLE}
                         bordered={false}
                     />
-                    <div style={{minWidth: '100px',textAlign: 'center'}}>
+                    <div style={{ minWidth: '100px', textAlign: 'center', justifyContent: 'center' }}>
                         {searchResults.length > 0 ? (
                             <>
                                 <Button
-                                    icon={<LeftOutlined/>}
+                                    icon={<LeftOutlined />}
                                     onClick={goToPrevious}
                                     size="small"
                                     type="text"
                                     style={NAV_BUTTON_STYLE}
                                 />
                                 <span style={RESULT_COUNT_STYLE}>
-                                {currentResultIndex + 1}/{totalMatches}
-                            </span>
+                                    {currentResultIndex + 1}/{totalMatches}
+                                </span>
                                 <Button
-                                    icon={<RightOutlined/>}
+                                    icon={<RightOutlined />}
                                     onClick={goToNext}
                                     size="small"
                                     type="text"
@@ -356,16 +356,16 @@ const PageSearch: React.FC<PageSearchProps> = ({cssSelector}) => {
                                 />
                             </>
                         ) : searchExecuted && searchText.trim() ? (
-                            <span style={{...RESULT_COUNT_STYLE, color: '#ff4d4f'}}>
-                            无匹配结果
-                        </span>
+                            <span style={{ ...RESULT_COUNT_STYLE, color: '#ff4d4f' }}>
+                                无匹配结果
+                            </span>
                         ) : null}
                     </div>
                     <Button
                         onClick={performSearch}
                         size="small"
                         type="text"
-                        icon={<SearchOutlined/>}
+                        icon={<SearchOutlined />}
                         style={SEARCH_BUTTON_STYLE}
                     />
                     <Button
@@ -377,7 +377,7 @@ const PageSearch: React.FC<PageSearchProps> = ({cssSelector}) => {
                         }}
                         size="small"
                         type="text"
-                        icon={<CloseOutlined/>}
+                        icon={<CloseOutlined />}
                         style={SEARCH_BUTTON_STYLE}
                     />
                 </div>

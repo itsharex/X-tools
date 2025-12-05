@@ -395,37 +395,39 @@ const Speaker: React.FC<TextToSpeechProps> = ({ cssSelector }) => {
                 </Button>
             </Tooltip>
 
-            {isPlaying && selectedText === '' && (
-                <>
-                    {/* 上一个按钮 */}
-                    <Tooltip title="上一个">
-                        <Button
-                            size="small"
-                            icon={<LeftOutlined />}
-                            onClick={() => setCurrentIndex(currentIndex > 0 ? currentIndex - 1 : 0)}
-                            disabled={!(elements.length > 0 && currentIndex > 0)}
-                        />
-                    </Tooltip>
+            {selectedText
+                ? <span style={{ backgroundColor: 'lightgray', padding: '4px' }}>{selectedText.substring(0, 2)}...</span>
+                : currentIndex !== -1 && (
+                    <>
+                        {/* 上一个按钮 */}
+                        <Tooltip title="上一个">
+                            <Button
+                                size="small"
+                                icon={<LeftOutlined />}
+                                onClick={() => setCurrentIndex(currentIndex > 0 ? currentIndex - 1 : 0)}
+                                disabled={!(elements.length > 0 && currentIndex > 0)}
+                            />
+                        </Tooltip>
 
-                    {/* 当前播放信息 */}
-                    <span style={{ fontSize: '12px', color: '#666', minWidth: '80px', textAlign: 'center' }}>
-                        {currentIndex >= 0 ? currentIndex + 1 : 1} / {elements.length}
-                    </span>
+                        {/* 当前播放信息 */}
+                        <span style={{ fontSize: '12px', color: '#666', minWidth: '80px', textAlign: 'center' }}>
+                            {currentIndex >= 0 ? currentIndex + 1 : 1} / {elements.length}
+                        </span>
 
-                    {/* 下一个按钮 */}
-                    <Tooltip title="下一个">
-                        <Button
-                            size="small"
-                            icon={<RightOutlined />}
-                            onClick={() => {
-                                // 如果currentIndex为-1，设置为0，否则递增
-                                setCurrentIndex(currentIndex === -1 ? 0 : currentIndex + 1);
-                            }}
-                            disabled={!(elements.length > 0 && currentIndex < elements.length - 1)}
-                        />
-                    </Tooltip>
-                </>
-            )
+                        {/* 下一个按钮 */}
+                        <Tooltip title="下一个">
+                            <Button
+                                size="small"
+                                icon={<RightOutlined />}
+                                onClick={() => {
+                                    // 如果currentIndex为-1，设置为0，否则递增
+                                    setCurrentIndex(currentIndex === -1 ? 0 : currentIndex + 1);
+                                }}
+                                disabled={!(elements.length > 0 && currentIndex < elements.length - 1)}
+                            />
+                        </Tooltip>
+                    </>
+                )
             }
         </Space>
     );
