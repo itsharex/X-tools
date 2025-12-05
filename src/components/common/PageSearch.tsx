@@ -12,9 +12,7 @@ const PageSearch: React.FC<PageSearchProps> = ({ cssSelector }) => {
     // 常量定义
     const HIGHLIGHT_CLASS = 'page-search-highlight';
     const CURRENT_RESULT_CLASS = 'current-result';
-    const POLLING_INTERVAL = 500; // 轮询间隔，单位毫秒
     const SEARCH_DEBOUNCE = 300; // 搜索防抖时间，单位毫秒
-    const SELECTION_DELAY = 300; // 选中文本延迟搜索时间，单位毫秒
     const SEARCH_CONTAINER_STYLE = {
         display: 'flex',
         alignItems: 'center',
@@ -59,27 +57,18 @@ const PageSearch: React.FC<PageSearchProps> = ({ cssSelector }) => {
     const [searchResults, setSearchResults] = useState<HTMLElement[]>([]);
     const [totalMatches, setTotalMatches] = useState(0); // 实际匹配项数量
     const [currentResultIndex, setCurrentResultIndex] = useState(0);
-    const [selectedText, setSelectedText] = useState('');
-    const [tempSelectedText, setTempSelectedText] = useState('');
 
 
     // 引用管理
     const searchInputRef = useRef<InputRef>(null);
-    const selectedTextPollingRef = useRef<number | null>(null);
-    const selectionDelayTimerRef = useRef<NodeJS.Timeout | null>(null);
 
 
     // 上下文
     const { currentFile } = useAppContext();
 
-    // 获取当前页面选中的文本
-    const getSelectedText = (): string => {
-        return window.getSelection()?.toString().trim() || '';
-    };
-
     // 转义正则表达式特殊字符
     const escapeRegExp = (string: string): string => {
-        return string.replace(/[.*+?^${}()|\\[\]]/g, '\\$&');
+        return string.replace(/[.*+?^${}()|[\]]/g, '\\$&');
     };
 
     // 清除所有高亮
@@ -220,12 +209,6 @@ const PageSearch: React.FC<PageSearchProps> = ({ cssSelector }) => {
             clearHighlights();
             setSearchResults([]);
             setSearchText('');
-        } else {
-            // 打开时使用当前选中的文本进行搜索
-            const text = getSelectedText();
-            if (text) {
-                setSearchText(text);
-            }
         }
     };
 
@@ -289,76 +272,9 @@ const PageSearch: React.FC<PageSearchProps> = ({ cssSelector }) => {
         };
     }, [isSearchVisible]);
 
-    // 轮询获取当前页面选中的文本
-    useEffect(() => {
-        // 启动轮询
-        const startPolling = () => {
-            if (selectedTextPollingRef.current) return;
 
-            // 立即获取一次选中的文本
-            setSelectedText(getSelectedText());
 
-            // 设置轮询
-            selectedTextPollingRef.current = window.setInterval(() => {
-                setSelectedText(getSelectedText());
-            }, POLLING_INTERVAL);
-        };
 
-        // 停止轮询
-        const stopPolling = () => {
-            if (selectedTextPollingRef.current) {
-                clearInterval(selectedTextPollingRef.current);
-                selectedTextPollingRef.current = null;
-            }
-        };
-
-        // 启动轮询
-        startPolling();
-
-        // 组件卸载时停止轮询并清除高亮
-        return () => {
-            stopPolling();
-            clearHighlights();
-            // 清除所有定时器
-            if (selectionDelayTimerRef.current) {
-                clearTimeout(selectionDelayTimerRef.current);
-                selectionDelayTimerRef.current = null;
-            }
-        };
-    }, []);
-
-    // 当有新的选中时，设置临时选中状态并启动延迟定时器
-    useEffect(() => {
-        if (selectedText && isSearchVisible) {
-            // 清除之前的定时器
-            if (selectionDelayTimerRef.current) {
-                clearTimeout(selectionDelayTimerRef.current);
-            }
-
-            // 设置临时选中状态
-            setTempSelectedText(selectedText);
-
-            // 启动新的定时器
-            selectionDelayTimerRef.current = setTimeout(() => {
-                // 只有当临时选中状态与当前选中状态相同时，才更新搜索文本
-                setSearchText(selectedText);
-            }, SELECTION_DELAY);
-        } else if (!selectedText) {
-            // 如果没有选中任何文本，清除定时器
-            if (selectionDelayTimerRef.current) {
-                clearTimeout(selectionDelayTimerRef.current);
-                selectionDelayTimerRef.current = null;
-            }
-            setTempSelectedText('');
-        }
-
-        return () => {
-            // 清除定时器
-            if (selectionDelayTimerRef.current) {
-                clearTimeout(selectionDelayTimerRef.current);
-            }
-        };
-    }, [selectedText, isSearchVisible]);
 
     return (
         <>
