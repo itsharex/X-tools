@@ -419,6 +419,19 @@ function generateWindowId(): string {
 const createWindow = (folderPath?: string) => {
     // 根据屏幕分辨率获取窗口尺寸
     const {width, height} = getWindowSize();
+    
+    // 获取当前活跃窗口的位置信息，用于新窗口偏移
+    let x: number | undefined;
+    let y: number | undefined;
+    
+    // 获取当前焦点窗口
+    const focusedWindow = BrowserWindow.getFocusedWindow();
+    if (focusedWindow) {
+        const currentPosition = focusedWindow.getPosition();
+        // 新窗口相对于当前窗口偏移30像素
+        x = currentPosition[0] + 40;
+        y = currentPosition[1] + 40;
+    }
 
     // 生成唯一窗口ID
     const windowId = generateWindowId();
@@ -427,6 +440,8 @@ const createWindow = (folderPath?: string) => {
     const newWindow = new BrowserWindow({
         width,
         height,
+        x,  // 添加x坐标
+        y,  // 添加y坐标
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             webSecurity: false, // 可以访问本地文件
