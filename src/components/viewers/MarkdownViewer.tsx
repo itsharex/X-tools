@@ -15,8 +15,10 @@ import {EditorState} from '@codemirror/state';
 import {EditorView} from '@codemirror/view';
 import Speaker from "../common/Speaker";
 import PageSearch from "../common/PageSearch";
+import EditorSearch, { searchHighlightField } from "../common/EditorSearch";
 import {FontSizeAdjuster} from "../common/FontSizeAdjuster";
 import "../common/PageSearch.css";
+import "../common/EditorSearch.css";
 
 const {Title} = Typography;
 
@@ -34,6 +36,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({filePath, fileNam
     const [outline, setOutline] = useState<OutlineItem[]>([]);
     const [viewMode, setViewMode] = useState<'rendered' | 'source'>('rendered');
     const [error, setError] = useState<string | null>(null);
+    const [editorView, setEditorView] = useState<any>(null);
 
 
     // ============================== Refs ==============================
@@ -451,6 +454,10 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({filePath, fileNam
                         </>
                     )}
 
+                    {viewMode === 'source' && editorView && (
+                        <EditorSearch editorView={editorView} />
+                    )}
+
                     <FontSizeAdjuster/>
 
                     {/* 视图模式切换按钮 */}
@@ -519,6 +526,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({filePath, fileNam
                                             }),
                                             EditorView.lineWrapping,
                                             EditorState.readOnly.of(false),
+                                            searchHighlightField, // 添加搜索高亮字段
                                             EditorView.theme({
                                                 '& .outline-highlight': {
                                                     backgroundColor: '#fff3cd',
@@ -528,6 +536,10 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({filePath, fileNam
                                         ]}
                                         onChange={(value) => {
                                             handleEditorChange(value);
+                                        }}
+                                        onCreateEditor={(view) => {
+                                            // 保存编辑器实例
+                                            setEditorView(view);
                                         }}
                                     />
                                 </div>

@@ -1,0 +1,22 @@
+/* 编辑器搜索高亮样式 */
+.editor-search-highlight {
+    background-color: #ffec99;
+    border-radius: 2px;
+}
+
+.editor-search-highlight.current-result {
+    background-color: #ffd43b;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        background-color: #ffd43b;
+    }
+    50% {
+        background-color: #ffc000;
+    }
+    100% {
+        background-color: #ffd43b;
+    }
+}
