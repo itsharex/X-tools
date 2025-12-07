@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Button, Input, Space } from 'antd';
+import { Button, Input } from 'antd';
 import type { InputRef } from 'antd/es/input';
 import { CloseOutlined, LeftOutlined, RightOutlined, SearchOutlined } from '@ant-design/icons';
 import { useAppContext } from '../../contexts/AppContext';
@@ -84,11 +84,7 @@ const PageSearch: React.FC<PageSearchProps> = ({ cssSelector }) => {
         });
     };
 
-    // 高亮搜索结果并返回实际匹配数
-    const highlightResults = (elements: HTMLElement[]): number => {
-        // 这个函数现在不再使用，因为我们直接在performSearch中处理高亮
-        return 0;
-    };
+
 
     // 滚动到指定结果并高亮显示
     const scrollToResult = (index: number): void => {
@@ -129,7 +125,7 @@ const PageSearch: React.FC<PageSearchProps> = ({ cssSelector }) => {
         const textNodes: Text[] = [];
         const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
         let node;
-        while (node = walker.nextNode()) {
+        while ((node = walker.nextNode())) {
             textNodes.push(node as Text);
         }
 

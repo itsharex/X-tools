@@ -7,6 +7,8 @@ import {loadConfig, saveConfig} from './utils/configManager';
 import {Config} from "./utils/config";
 import chardet from 'chardet';
 import iconv from 'iconv-lite';
+import {spawnSync} from 'child_process';
+import {Worker} from 'worker_threads';
 
 // 添加环境变量声明
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
@@ -14,9 +16,6 @@ declare const MAIN_WINDOW_VITE_NAME: string;
 
 // 修复Windows控制台中文乱码问题
 if (process.platform === 'win32') {
-    // 导入child_process模块
-    const {spawnSync} = require('child_process');
-
     // 设置Windows控制台为UTF-8编码
     try {
         spawnSync('chcp', ['65001'], {stdio: 'inherit'});
@@ -291,7 +290,9 @@ function registerIpcHandlers() {
 
     // 获取应用描述
     ipcMain.handle('getAppDescription', async () => {
-        const packageJson = require(path.join(app.getAppPath(), 'package.json'));
+        const packageJsonPath = path.join(app.getAppPath(), 'package.json');
+        const packageJsonContent = await fs.readFile(packageJsonPath, 'utf-8');
+        const packageJson = JSON.parse(packageJsonContent);
         return packageJson.description;
     });
 
@@ -302,9 +303,7 @@ function registerIpcHandlers() {
 
     // 搜索文件内容 - 使用Worker线程
     ipcMain.handle('searchFilesContent', async (event, dirPath: string, query: string, searchId: string, searchMode: 'content' | 'filename' = 'content') => {
-        const {Worker} = require('worker_threads');
-        const path = require('path');
-        const {app} = require('electron');
+        // Worker和path、app已经在文件顶部导入
 
         return new Promise((resolve, reject) => {
             // 创建Worker线程 - 根据是否打包使用不同的路径

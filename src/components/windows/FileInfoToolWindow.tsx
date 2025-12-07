@@ -47,6 +47,18 @@ const FileInfoPanel: React.FC = () => {
     // 这里看起来事件挺杂乱，但确是 Trae 精挑细选的，不能删一条，不然总会漏掉一些场景。
     // 这个事情，也不能挪到更高层级共享状态，会影响页面选中。要避免 Markdown 页面因状态而重新渲染，而影响选中状态。
     useEffect(() => {
+        // 监听PDF文本选择事件
+        const handlePdfTextSelected = (event: CustomEvent) => {
+            const selectedText = event.detail;
+            setSelectedText(selectedText);
+            const count = countText(selectedText);
+            if (count.chars > 0) {
+                setSelectedTextCount(`${count.chars} 字`);
+            } else {
+                setSelectedTextCount('0 字');
+            }
+        };
+
         // 监听选择变化
         document.addEventListener('selectionchange', handleSelectionChange);
         // 监听鼠标点击事件（处理点击空白处取消选择）
@@ -57,6 +69,8 @@ const FileInfoPanel: React.FC = () => {
         document.addEventListener('keyup', handleSelectionChange);
         // 监听窗口失焦（可能导致选择被清除）
         window.addEventListener('blur', forceUpdateSelection);
+        // 监听PDF文本选择事件
+        window.addEventListener('pdf-text-selected', handlePdfTextSelected);
 
         return () => {
             document.removeEventListener('selectionchange', handleSelectionChange);
@@ -64,6 +78,8 @@ const FileInfoPanel: React.FC = () => {
             document.removeEventListener('keydown', forceUpdateSelection);
             document.removeEventListener('keyup', handleSelectionChange);
             window.removeEventListener('blur', forceUpdateSelection);
+            // 移除PDF文本选择事件监听器
+            window.removeEventListener('pdf-text-selected', handlePdfTextSelected);
         };
     }, [selectedText]);
 

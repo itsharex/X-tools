@@ -6,6 +6,8 @@ import {MakerRpm} from '@electron-forge/maker-rpm';
 import {VitePlugin} from '@electron-forge/plugin-vite';
 import {FusesPlugin} from '@electron-forge/plugin-fuses';
 import {FuseV1Options, FuseVersion} from '@electron/fuses';
+import fs from 'fs';
+import path from 'path';
 
 const config: ForgeConfig = {
     packagerConfig: {
@@ -17,13 +19,10 @@ const config: ForgeConfig = {
     hooks: {
         postMake: async (forgeConfig, makeResults) => {
             /* 在这里我们可以重命名生成的文件 */
-            const fs = require('fs');
-            const path = require('path');
 
             // 复制文件的通用函数，保留原始文件并创建新名称的副本
             const copyArtifactWithNewName = (artifact, searchValue, replaceValue) => {
-                // 获取文件所在的目录和文件名
-                const dir = path.dirname(artifact);
+                // 获取文件名
                 const basename = path.basename(artifact);
                 // 创建新的文件路径，保持目录结构一致
                 const newBasename = basename.replace(searchValue, replaceValue);
