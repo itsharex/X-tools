@@ -17656,7 +17656,9 @@ initCom(PDFViewerApplication);
       return;
     }
     const fileOrigin = URL.parse(file, window.location)?.origin;
-    if (fileOrigin === viewerOrigin) {
+    // 允许加载 file:// 协议的文件，即使 viewer 来自不同 origin
+    // 这是针对桌面应用的特殊处理，确保能加载本地 PDF 文件
+    if (fileOrigin === viewerOrigin || fileOrigin === "file://") {
       return;
     }
     const ex = new Error("file origin does not match viewer's");
