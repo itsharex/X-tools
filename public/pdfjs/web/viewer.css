@@ -5308,7 +5308,7 @@
 
 .sidebar{
   --csstools-light-dark-toggle--125:var(--csstools-color-scheme--light) #23222b;
-  --sidebar-bg-color:var(--csstools-light-dark-toggle--125, #fff);
+  --sidebar-bg-color:var(--csstools-light-dark-toggle--125, #fefefe);
   --csstools-light-dark-toggle--126:var(--csstools-color-scheme--light) rgb(251 251 254 / 0.1);
   --sidebar-border-color:var(--csstools-light-dark-toggle--126, rgb(21 20 26 / 0.1));
   --csstools-light-dark-toggle--127:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
@@ -5325,9 +5325,8 @@
   --resizer-hover-bg-color:var(--csstools-light-dark-toggle--129, #0062fa);
 }
 
-@supports (color: light-dark(red, red)){
-.sidebar{
-  --sidebar-bg-color:light-dark(#fff, #23222b);
+@supports (color: light-dark(red, red)){.sidebar{
+  --sidebar-bg-color:light-dark(#fefefe, #23222b);
 }
 }
 
@@ -5660,7 +5659,7 @@
 
   --main-color:var(--csstools-light-dark-toggle--0, rgb(12 12 13));
   --csstools-light-dark-toggle--1:var(--csstools-color-scheme--light) rgb(42 42 46);
-  --body-bg-color:var(--csstools-light-dark-toggle--1, rgb(212 212 215));
+  --body-bg-color:var(--csstools-light-dark-toggle--1, rgb(248 248 250));
   --csstools-light-dark-toggle--2:var(--csstools-color-scheme--light) rgb(0 96 223);
   --progressBar-color:var(--csstools-light-dark-toggle--2, rgb(10 132 255));
   --csstools-light-dark-toggle--3:var(--csstools-color-scheme--light) rgb(40 40 43);
@@ -5678,7 +5677,7 @@
 
   --csstools-light-dark-toggle--9:var(--csstools-color-scheme--light) rgb(42 42 46 / 0.9);
 
-  --sidebar-narrow-bg-color:var(--csstools-light-dark-toggle--9, rgb(212 212 215 / 0.9));
+  --sidebar-narrow-bg-color:var(--csstools-light-dark-toggle--9, rgb(248 248 250 / 0.9));
   --csstools-light-dark-toggle--10:var(--csstools-color-scheme--light) rgb(50 50 52);
   --sidebar-toolbar-bg-color:var(--csstools-light-dark-toggle--10, rgb(245 246 247));
   --csstools-light-dark-toggle--11:var(--csstools-color-scheme--light) rgb(56 56 61);
@@ -5713,7 +5712,7 @@
   --treeitem-hover-color:var(--csstools-light-dark-toggle--20, rgb(0 0 0 / 0.9));
   --csstools-light-dark-toggle--21:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.9);
   --treeitem-selected-color:var(--csstools-light-dark-toggle--21, rgb(0 0 0 / 0.9));
-  --csstools-light-dark-toggle--22:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.25);
+  --csstools-light-dark-toggle--22:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.15);
   --treeitem-selected-bg-color:var(--csstools-light-dark-toggle--22, rgb(0 0 0 / 0.25));
   --csstools-light-dark-toggle--23:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.1);
   --thumbnail-hover-color:var(--csstools-light-dark-toggle--23, rgb(0 0 0 / 0.1));
@@ -5791,7 +5790,7 @@
 :root{
 
   --main-color:light-dark(rgb(12 12 13), rgb(249 249 250));
-  --body-bg-color:light-dark(rgb(212 212 215), rgb(42 42 46));
+  --body-bg-color:light-dark(rgb(248 248 250), rgb(42 42 46));
   --progressBar-color:light-dark(rgb(10 132 255), rgb(0 96 223));
   --progressBar-bg-color:light-dark(rgb(221 221 222), rgb(40 40 43));
   --progressBar-blend-color:light-dark(rgb(116 177 239), rgb(20 68 133));
@@ -5820,7 +5819,7 @@
     rgb(255 255 255 / 0.9)
   );
   --treeitem-selected-bg-color:light-dark(
-    rgb(0 0 0 / 0.25),
+    rgb(0 0 0 / 0.15),
     rgb(255 255 255 / 0.25)
   );
   --thumbnail-hover-color:light-dark(rgb(0 0 0 / 0.1), rgb(255 255 255 / 0.1));
