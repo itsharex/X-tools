@@ -6216,6 +6216,42 @@ body.wait::before{
   inset-inline-start:calc(50% - var(--doorhanger-height) - 1px);
 }
 
+/* Custom style for search bar to appear to the right of the search button */
+.toolbarButtonWithContainer #findbar {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: calc(100% + 8px); /* Add spacing between button and search bar */
+  z-index: 30000;
+  margin-left: 0;
+}
+
+/* Adjust triangle position for search bar to point to search button */
+.toolbarButtonWithContainer #findbar::before {
+  left: -10px !important;
+  right: auto !important;
+  top: 50% !important;
+  bottom: auto !important;
+  transform: translateY(-50%);
+  border-width: 5px !important;
+  border-top-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-right-color: var(--doorhanger-border-color) !important;
+  border-left-color: transparent !important;
+}
+
+.toolbarButtonWithContainer #findbar::after {
+  left: -8px !important;
+  right: auto !important;
+  top: 50% !important;
+  bottom: auto !important;
+  transform: translateY(-50%);
+  border-width: 4px !important;
+  border-top-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-right-color: var(--doorhanger-bg-color) !important;
+  border-left-color: transparent !important;
+}
+
 .doorHanger::before{
     inset-inline-start:-1px;
   }
@@ -7085,20 +7121,20 @@ dialog :link{
     }
 
 #findbar{
-  --input-horizontal-padding:4px;
-  --findbar-padding:2px;
+  --input-horizontal-padding:2px;
+  --findbar-padding:1px;
 
   width:-moz-max-content;
 
   width:max-content;
   max-width:90vw;
-  min-height:var(--toolbar-height);
+  min-height:28px; /* Reduce minimum height */
   height:auto;
   position:absolute;
   z-index:30000;
   cursor:default;
   padding:0;
-  min-width:300px;
+  min-width:200px;
   background-color:var(--toolbar-bg-color);
   box-sizing:border-box;
   flex-wrap:wrap;
@@ -7106,12 +7142,12 @@ dialog :link{
 }
 
 #findbar  > *{
-    height:var(--toolbar-height);
+    height:28px; /* Reduce height */
     padding:var(--findbar-padding);
   }
 
 #findbar #findInputContainer{
-    margin-inline-start:2px;
+    margin-inline-start:1px; /* Reduce left margin */
   }
 
 :is(#findbar #findInputContainer) #findPreviousButton::before{
@@ -7125,8 +7161,9 @@ dialog :link{
     }
 
 :is(#findbar #findInputContainer) #findInput{
-      width:200px;
-      padding:5px var(--input-horizontal-padding);
+      width:150px; /* Reduce input box width */
+      padding:3px var(--input-horizontal-padding); /* Adjust padding */
+      font-size:12px; /* Reduce font size */
     }
 
 :is(:is(#findbar #findInputContainer) #findInput)::-moz-placeholder{
