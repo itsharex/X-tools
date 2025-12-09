@@ -687,7 +687,7 @@ export const GlobalSearch: React.FC<SearchSplitPanelProps> = ({onClose}) => {
                                                 {folderGroups[folder].map((result, resultIdx) => (
                                                     <div key={resultIdx}>
                                                         <div
-                                                            onClick={() => handleResultClick(result.filePath, result.fileName)}
+                                                            onClick={() => handleResultClick(result.filePath, result.fileName, 1)}
                                                             style={{
                                                                 cursor: 'pointer',
                                                                 padding: '8px 0',
