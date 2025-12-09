@@ -9,8 +9,8 @@ import {
   isPdfFile,
   dirname,
   join,
-  basename,
-  getFileNameWithoutExtension,
+  fullname,
+  name,
   normalizePath,
   toFileUrl,
   formatFileSize,
@@ -124,22 +124,22 @@ describe('fileType.ts 测试', () => {
       });
     });
 
-    describe('basename', () => {
+    describe('fullname', () => {
       it('应该正确获取文件名', () => {
-        expect(basename('/path/to/file.txt')).toBe('file.txt');
-        expect(basename('C:\\Users\\John\\file.txt')).toBe('file.txt');
-        expect(basename('file.txt')).toBe('file.txt');
-        expect(basename('/')).toBe('');
+        expect(fullname('/path/to/file.txt')).toBe('file.txt');
+        expect(fullname('C:\\Users\\John\\file.txt')).toBe('file.txt');
+        expect(fullname('file.txt')).toBe('file.txt');
+        expect(fullname('/')).toBe('');
       });
     });
 
-    describe('getFileNameWithoutExtension', () => {
+    describe('name', () => {
       it('应该正确获取不包含扩展名的文件名', () => {
-        expect(getFileNameWithoutExtension('/path/to/file.txt')).toBe('file');
-        expect(getFileNameWithoutExtension('C:\\Users\\John\\file.txt')).toBe('file');
-        expect(getFileNameWithoutExtension('file.txt')).toBe('file');
-        expect(getFileNameWithoutExtension('file_without_extension')).toBe('file_without_extension');
-        expect(getFileNameWithoutExtension('file.with.many.dots.txt')).toBe('file.with.many.dots');
+        expect(name('/path/to/file.txt')).toBe('file');
+        expect(name('C:\\Users\\John\\file.txt')).toBe('file');
+        expect(name('file.txt')).toBe('file');
+        expect(name('file_without_extension')).toBe('file_without_extension');
+        expect(name('file.with.many.dots.txt')).toBe('file.with.many.dots');
       });
     });
 

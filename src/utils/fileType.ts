@@ -65,7 +65,7 @@ const FILE_TYPE_DISPLAY_NAMES: Record<DetectedFileType, string> = {
 export function getExtension(name: string): string {
   const idx = name.lastIndexOf('.');
   // 处理隐藏文件（以.开头的文件）
-  const fileName = basename(name);
+  const fileName = fullname(name);
   if (idx === -1 || fileName.startsWith('.')) return '';
   return name.slice(idx + 1).toLowerCase();
 }
@@ -144,7 +144,7 @@ export function join(...paths: string[]): string {
  * 获取文件名（包含扩展名）
  * @param filePath 文件路径
  */
-export function basename(filePath: string): string {
+export function fullname(filePath: string): string {
   const parts = filePath.split(/[/\\]/);
   return parts[parts.length - 1];
 }
@@ -153,11 +153,11 @@ export function basename(filePath: string): string {
  * 获取文件名（不包含扩展名）
  * @param filePath 文件路径
  */
-export function getFileNameWithoutExtension(filePath: string): string {
-  const name = basename(filePath);
-  const idx = name.lastIndexOf('.');
-  if (idx === -1) return name;
-  return name.slice(0, idx);
+export function name(filePath: string): string {
+  const filename = fullname(filePath);
+  const idx = filename.lastIndexOf('.');
+  if (idx === -1) return filename;
+  return filename.slice(0, idx);
 }
 
 /**
