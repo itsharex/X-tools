@@ -131,6 +131,13 @@ describe('fileType.ts 测试', () => {
         expect(fullname('file.txt')).toBe('file.txt');
         expect(fullname('/')).toBe('');
       });
+      
+      it('应该正确处理文件夹路径', () => {
+        expect(fullname('/path/to/folder/')).toBe('folder');
+        expect(fullname('C:\\Users\\John\\Documents\\')).toBe('Documents');
+        expect(fullname('/path/to/folder//')).toBe('folder');
+        expect(fullname('C:\\Users\\John\\folder\\\\')).toBe('folder');
+      });
     });
 
     describe('name', () => {
@@ -140,6 +147,13 @@ describe('fileType.ts 测试', () => {
         expect(name('file.txt')).toBe('file');
         expect(name('file_without_extension')).toBe('file_without_extension');
         expect(name('file.with.many.dots.txt')).toBe('file.with.many.dots');
+      });
+      
+      it('应该正确处理文件夹路径', () => {
+        expect(name('/path/to/folder/')).toBe('folder');
+        expect(name('C:\\Users\\John\\Documents\\')).toBe('Documents');
+        expect(name('/path/to/folder//')).toBe('folder');
+        expect(name('C:\\Users\\John\\folder\\\\')).toBe('folder');
       });
     });
 

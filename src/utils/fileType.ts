@@ -141,11 +141,13 @@ export function join(...paths: string[]): string {
 }
 
 /**
- * 获取文件名（包含扩展名）
- * @param filePath 文件路径
+ * 获取文件名或文件夹名
+ * @param filePath 文件或文件夹路径
  */
 export function fullname(filePath: string): string {
-  const parts = filePath.split(/[/\\]/);
+  // 移除末尾的路径分隔符
+  const normalizedPath = filePath.replace(/[/\\]+$/, '');
+  const parts = normalizedPath.split(/[/\\]/);
   return parts[parts.length - 1];
 }
 
