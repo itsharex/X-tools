@@ -18300,7 +18300,7 @@ function onKeyDown(evt) {
   }
 }
 function beforeUnload(evt) {
-  evt.preventDefault();
+  // evt.preventDefault();
   evt.returnValue = "";
   return false;
 }
