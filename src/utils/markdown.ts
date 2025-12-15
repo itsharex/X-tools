@@ -124,12 +124,17 @@ export async function parseMarkdown(markdown: string, filePath = ''): Promise<Ma
                 const text = node.children
                     .map((child: any) => {
                         if (child.type === 'text') return child.value;
+                        if (child.type === 'html') return child.value;
                         if (child.type === 'strong' || child.type === 'emphasis') {
-                            return child.children.map((c: any) => c.value).join('');
+                            return child.children.map((c: any) => {
+                                if (c.type === 'text') return c.value;
+                                if (c.type === 'html') return c.value;
+                                return '';
+                            }).join('');
                         }
                         return '';
                     })
-                    .join('');
+                    .join('').trim();
 
                 const id = generateAnchorId(text, existingIds);
                 const item: OutlineItem = {
@@ -158,11 +163,11 @@ export async function parseMarkdown(markdown: string, filePath = ''): Promise<Ma
                 node.data.hProperties.id = id;
             });
         })
-        .use(remarkRehype) // 将 Markdown 转换为 HTML
+        .use(remarkRehype, { allowDangerousHtml: true }) // 将 Markdown 转换为 HTML，允许危险 HTML
         .use(rehypeHighlight) // 添加代码高亮
         .use(rehypeMermaid) // 渲染 Mermaid 图表
         .use(rehypeKatex) // 数学公式渲染
-        .use(rehypeStringify); // 将结果序列化为 HTML 字符串
+        .use(rehypeStringify, { allowDangerousHtml: true }); // 将结果序列化为 HTML 字符串，允许危险 HTML
 
     // 处理 Markdown 内容
     const result = await processor.process(markdown);
