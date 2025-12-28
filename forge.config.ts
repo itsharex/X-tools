@@ -14,6 +14,7 @@ const config: ForgeConfig = {
         asar: true,
         name: 'X-tools',
         executableName: 'X-tools',
+        icon: path.join(__dirname, 'public/icon.icns'),
         extraResource: [
             path.join(__dirname, 'public/pdfjs'),
         ],
