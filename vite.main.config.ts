@@ -15,12 +15,6 @@ export default defineConfig({
                 chunkFileNames: 'chunks/[name]-[hash].js',
                 assetFileNames: 'assets/[name]-[hash].[ext]',
             },
-            external: [],
-        },
-    },
-    resolve: {
-        alias: {
-            '@': resolve(__dirname, 'src'),
         },
     },
 });
