@@ -294,7 +294,8 @@ function registerIpcHandlers() {
         // 我们需要构造正确的资源目录路径
         const appPath = app.getAppPath();
         // 应用程序目录通常是 Resources/app.asar，所以我们需要返回到Resources目录
-        const resourcesPath = appPath.replace(/\/app\.asar$/, '');
+        // 使用跨平台的正则表达式处理路径分隔符
+        const resourcesPath = appPath.replace(/[\\\/]app\.asar$/, '');
         console.log('getAppPath: appPath =', appPath);
         console.log('getAppPath: resourcesPath =', resourcesPath);
         return resourcesPath;
