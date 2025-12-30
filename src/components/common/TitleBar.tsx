@@ -372,7 +372,7 @@ export const TitleBar: React.FC = () => {
                         />
                         {/* Windows 窗口控制按钮 */}
                         {!isMac && (
-                            <div style={{display: 'flex', gap: 0, marginLeft: 8, marginRight: -16}}>
+                            <div style={{display: 'flex', gap: 0, marginLeft: 8, marginRight: -14}}>
                                 <Button
                                     type="text"
                                     title="最小化"
