@@ -325,8 +325,8 @@ function registerIpcHandlers() {
                 // 开发模式下，Worker文件直接在.vite/build目录下
                 workerPath = path.join(__dirname, 'searchWorker.js');
             } else if (app.isPackaged) {
-                // 打包后，Worker文件会在resources目录下
-                workerPath = path.join(process.resourcesPath, 'searchWorker.js');
+                // 打包后，Worker文件在ASAR归档中，使用app.getAppPath()获取路径
+                workerPath = path.join(app.getAppPath(), '.vite/build/searchWorker.js');
             } else {
                 // 其他情况，使用源码路径
                 workerPath = path.join(app.getAppPath(), 'src', 'utils', 'searchWorker.ts');
