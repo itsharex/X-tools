@@ -1,3 +1,4 @@
 {
-    "codingcopilot.enableCompletionLanguage": {}
+    "codingcopilot.enableCompletionLanguage": {},
+    "editor.fontSize": 16
 }
