@@ -216,11 +216,17 @@ export const TitleBar: React.FC = () => {
                                                 setDropdownOpen(false);
                                                 // 显示选择对话框
                                                 setTimeout(() => {
-                                                    showFolderChoiceDialog((openInNewWindow) => {
-                                                        if (openInNewWindow !== null) {
-                                                            handleSelectDirectory(openInNewWindow);
-                                                        }
-                                                    });
+                                                    if (recentFolders.length === 0) {
+                                                        // 当没有文件夹列表时，直接在当前窗口打开
+                                                        handleSelectDirectory(false);
+                                                    } else {
+                                                        // 当有文件夹列表时，显示选择对话框
+                                                        showFolderChoiceDialog((openInNewWindow) => {
+                                                            if (openInNewWindow !== null) {
+                                                                handleSelectDirectory(openInNewWindow);
+                                                            }
+                                                        });
+                                                    }
                                                 }, 100);
                                             }
                                     },
