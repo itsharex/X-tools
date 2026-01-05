@@ -70,8 +70,7 @@ if (started) {
 // 用于存储当前活动的搜索Worker线程
 const activeSearchWorkers = new Map<string, any>();
 
-// 用于存储所有窗口的Map
-const windows = new Map<string, BrowserWindow>();
+
 
 // 平台检测
 const isMac = process.platform === 'darwin';
@@ -396,8 +395,8 @@ function registerIpcHandlers() {
     // 创建新窗口
     ipcMain.handle('createNewWindow', async (event, folderPath?: string) => {
         try {
-            const newWindow = createWindow(folderPath);
-            return { success: true, windowId: (newWindow as any).windowId };
+            createWindow(folderPath);
+            return { success: true };
         } catch (error) {
             console.error('创建新窗口失败:', error);
             return { success: false, error: (error as Error).message };
@@ -437,10 +436,7 @@ const getWindowSize = () => {
     }
 };
 
-// 生成唯一窗口ID
-function generateWindowId(): string {
-    return `window_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-}
+
 
 // 创建新窗口，可选择指定初始文件夹
 const createWindow = (folderPath?: string) => {
@@ -459,9 +455,6 @@ const createWindow = (folderPath?: string) => {
         x = currentPosition[0] + 40;
         y = currentPosition[1] + 40;
     }
-
-    // 生成唯一窗口ID
-    const windowId = generateWindowId();
 
     // Create the browser window with platform-specific settings
     const newWindow = new BrowserWindow({
@@ -485,12 +478,8 @@ const createWindow = (folderPath?: string) => {
         })
     });
 
-    // 存储窗口引用
-    windows.set(windowId, newWindow);
-    (newWindow as any).windowId = windowId;
-
     // 如果这是第一个窗口，设置为global.mainWindow以兼容现有代码
-    if (windows.size === 1) {
+    if (BrowserWindow.getAllWindows().length === 1) {
         (global as any).mainWindow = newWindow;
     }
 
@@ -512,10 +501,9 @@ const createWindow = (folderPath?: string) => {
 
     // 窗口关闭时清理引用
     newWindow.on('closed', () => {
-        windows.delete(windowId);
         // 如果关闭的是主窗口，重新指定一个主窗口
         if ((global as any).mainWindow === newWindow) {
-            const remainingWindows = Array.from(windows.values());
+            const remainingWindows = BrowserWindow.getAllWindows();
             if (remainingWindows.length > 0) {
                 (global as any).mainWindow = remainingWindows[0];
             } else {

@@ -47,7 +47,7 @@ interface ElectronAPI {
     /** 关闭窗口 */
     closeWindow: () => Promise<void>;
     /** 创建新窗口 */
-    createNewWindow: (folderPath?: string) => Promise<{ success: boolean; windowId?: string; error?: string }>;
+    createNewWindow: (folderPath?: string) => Promise<{ success: boolean; error?: string }>;
     /** 打开开发者工具 */
     openDevTools: () => Promise<{ success: boolean; error?: string }>;
     /** 监听初始文件夹设置 */
@@ -110,7 +110,7 @@ const electronAPI: ElectronAPI = {
     minimizeWindow: () => ipcRenderer.invoke('minimizeWindow') as Promise<void>,
     toggleMaximizeWindow: () => ipcRenderer.invoke('toggleMaximizeWindow') as Promise<void>,
     closeWindow: () => ipcRenderer.invoke('closeWindow') as Promise<void>,
-    createNewWindow: (folderPath?: string) => ipcRenderer.invoke('createNewWindow', folderPath) as Promise<{ success: boolean; windowId?: string; error?: string }>,
+    createNewWindow: (folderPath?: string) => ipcRenderer.invoke('createNewWindow', folderPath) as Promise<{ success: boolean; error?: string }>,
     openDevTools: () => ipcRenderer.invoke('openDevTools') as Promise<{ success: boolean; error?: string }>,
     onSetInitialFolder: (callback) => ipcRenderer.on('setInitialFolder', (event, folderPath) => callback(folderPath)),
     offSetInitialFolder: (callback) => ipcRenderer.off('setInitialFolder', (event, folderPath) => callback(folderPath)),
