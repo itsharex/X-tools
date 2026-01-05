@@ -1,32 +1,48 @@
-import React, {useEffect} from 'react';
-import {App, ConfigProvider, Drawer, Splitter} from "antd";
-import {FileViewer} from './components/viewers/FileViewer';
-import {ToolWindowsPane} from './components/windows/ToolWindowsPane';
-import {AppProvider, useAppContext} from './contexts/AppContext';
-import {Container} from "./components/common/Container";
-import {Center} from "./components/common/Center";
-import {GlobalSearch} from './components/common/GlobalSearch';
-import {FileTree} from './components/common/FileTree';
-import {TitleBar} from './components/common/TitleBar';
+import React, { useEffect } from 'react';
+
+// 第三方库
+import { App, ConfigProvider, Drawer, Splitter } from "antd";
+
+// 上下文
+import { AppProvider, useAppContext } from './contexts/AppContext';
+
+// 通用组件
+import { Container } from "./components/common/Container";
+import { Center } from "./components/common/Center";
+import { GlobalSearch } from './components/common/GlobalSearch';
+import { FileTree } from './components/common/FileTree';
+import { TitleBar } from './components/common/TitleBar';
+
+// 视图组件
+import { FileViewer } from './components/viewers/FileViewer';
+import { ToolWindowsPane } from './components/windows/ToolWindowsPane';
+import { fullname } from './utils/fileCommonUtil';
+
+// 常量定义
+const WINDOW_SIZE_KEY = 'x-tools-window-size';
 
 const AppContent: React.FC = () => {
-    const {currentFolder, currentFile, titleBarVisible, searchPanelOpen, setSearchPanelOpen, setCurrentFolder} = useAppContext();
+    const { currentFile, titleBarVisible, searchPanelOpen, config, setSearchPanelOpen, setCurrentFolder, setConfig } = useAppContext();
 
-    // 窗口大小相关的状态和功能
-    const WINDOW_SIZE_KEY = 'x-tools-window-size';
-
-    // 保存窗口大小到local storage
-    const saveWindowSize = (width: number, height: number) => {
+    /**
+     * 保存窗口大小到local storage
+     * @param width - 窗口宽度
+     * @param height - 窗口高度
+     */
+    const saveWindowSize = (width: number, height: number): void => {
         try {
-            const windowSize = {width, height};
+            const windowSize = { width, height };
             localStorage.setItem(WINDOW_SIZE_KEY, JSON.stringify(windowSize));
         } catch (error) {
             console.error('保存窗口大小失败:', error);
         }
     };
 
-    // 从local storage读取窗口大小
-    const getWindowSize = () => {
+    /**
+     * 从local storage读取窗口大小
+     * @returns 保存的窗口大小对象 {width, height}，如果没有保存则返回null
+     */
+    const getWindowSize = (): { width: number; height: number } | null => {
         try {
             const savedSize = localStorage.getItem(WINDOW_SIZE_KEY);
             return savedSize ? JSON.parse(savedSize) : null;
@@ -36,42 +52,21 @@ const AppContent: React.FC = () => {
         }
     };
 
-    // 当文件夹改变时关闭搜索面板
-    useEffect(() => {
-        if (currentFolder) {
-            setSearchPanelOpen(false);
-        }
-    }, [currentFolder]);
+    /**
+     * 处理关闭搜索面板事件
+     */
+    const handleCloseSearchPanel = (): void => {
+        setSearchPanelOpen(false);
+    };
 
-    // 监听初始文件夹设置（新窗口打开时）
-    useEffect(() => {
-        if (window.electronAPI) {
-            const handleSetInitialFolder = (folderPath: string) => {
-                setCurrentFolder(folderPath);
-            };
-
-            window.electronAPI.onSetInitialFolder(handleSetInitialFolder);
-
-            return () => {
-                window.electronAPI.offSetInitialFolder(handleSetInitialFolder);
-            };
-        }
-    }, [setCurrentFolder]);
-
-    // 同步红绿灯显示状态与标题栏显示状态
-    useEffect(() => {
-        if (window.electronAPI?.setWindowButtonVisibility) {
-            if (searchPanelOpen) {
-                setTimeout(() => {
-                    window.electronAPI.setWindowButtonVisibility(false);
-                }, 500)
-            } else {
-                window.electronAPI.setWindowButtonVisibility(titleBarVisible);
-            }
-        }
-    }, [titleBarVisible, searchPanelOpen]);
-
-    // 监听窗口大小变化并保存
+    /**
+     * 监听窗口大小变化并保存
+     * 1. 组件挂载时恢复上次保存的窗口大小
+     * 2. 监听窗口大小变化事件并保存到localStorage
+     * 3. 组件卸载时移除事件监听器
+     * 4. 组件挂载时关闭搜索面板
+     * 5. 组件挂载时获取当前窗口的文件夹
+     */
     useEffect(() => {
         // 组件挂载时恢复窗口大小
         const savedSize = getWindowSize();
@@ -83,8 +78,10 @@ const AppContent: React.FC = () => {
             }
         }
 
-        // 监听窗口大小变化事件
-        const handleResize = () => {
+        /**
+         * 处理窗口大小变化事件
+         */
+        const handleResize = (): void => {
             if (window.innerWidth && window.innerHeight) {
                 saveWindowSize(window.innerWidth, window.innerHeight);
             }
@@ -92,40 +89,110 @@ const AppContent: React.FC = () => {
 
         window.addEventListener('resize', handleResize);
 
+        // 组件挂载时如果搜索面板打开，立即关闭
+        if (searchPanelOpen) {
+            setSearchPanelOpen(false);
+        }
+
+        // 加载配置文件
+        window.electronAPI.loadConfig().then(async (loadedConfig) => {
+            setConfig(loadedConfig);
+        });
+
         // 组件卸载时移除监听器
         return () => {
             window.removeEventListener('resize', handleResize);
         };
     }, []);
 
+    useEffect(() => {
+        if (config) {
+            try {
+                window.electronAPI.getCurrentWindowFolder().then((folderPath) => {
+                    if (folderPath) {
+                        console.log('当前窗口文件夹:', folderPath);
+                        setCurrentFolder(folderPath);
+                    } else {
+                        console.log('当前窗口没有文件夹');
+                        if (config.recentFolders.length > 0) {
+                            console.log('设置最近文件夹:', config.recentFolders[0].path);
+                            setCurrentFolder(config.recentFolders[0].path);
+                            window.electronAPI.setCurrentWindowFolder(config.recentFolders[0].path);
+                        } else {
+                            console.log('没有最近文件夹');
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('获取当前窗口文件夹失败:', error);
+            }
+        }
+    }, [config]);
+
+    /**
+     * 同步窗口按钮显示状态与标题栏/搜索面板状态
+     * 当搜索面板打开时，隐藏窗口按钮
+     * 当搜索面板关闭时，根据标题栏可见性显示窗口按钮
+     */
+    useEffect(() => {
+        if (window.electronAPI?.setWindowButtonVisibility) {
+            if (searchPanelOpen) {
+                setTimeout(() => {
+                    window.electronAPI.setWindowButtonVisibility(false);
+                }, 500);
+            } else {
+                window.electronAPI.setWindowButtonVisibility(titleBarVisible);
+            }
+        }
+    }, [titleBarVisible, searchPanelOpen]);
+
     return (
         <>
-            <TitleBar/>
-            <Splitter style={{height: titleBarVisible ? 'calc(100vh - 40px)' : '100vh'}}>
-                <Splitter.Panel defaultSize={320} min={'10%'} max={'45%'} collapsible>
-                    <FileTree/>
+            {/* 标题栏 */}
+            <TitleBar />
+
+            {/* 主分割器布局 */}
+            <Splitter style={{ height: titleBarVisible ? 'calc(100vh - 40px)' : '100vh' }}>
+                {/* 左侧文件树面板 */}
+                <Splitter.Panel
+                    defaultSize={320}
+                    min={'10%'}
+                    max={'45%'}
+                    collapsible
+                >
+                    <FileTree />
                 </Splitter.Panel>
-                <Splitter.Panel style={{padding: 0}}>
-                    <Container style={{position: 'relative'}}>
+
+                {/* 中间文件预览面板 */}
+                <Splitter.Panel style={{ padding: 0 }}>
+                    <Container style={{ position: 'relative' }}>
                         {currentFile ? (
                             <FileViewer
-                            filePath={currentFile}
-                            fileName={currentFile.split(/[\\/]/).pop() || ''}
-                        />
+                                filePath={currentFile}
+                                fileName={fullname(currentFile)}
+                            />
                         ) : (
-                            <Center style={{color: 'gray'}}>
+                            <Center style={{ color: 'gray' }}>
                                 请在左侧选择一个文件以预览内容
                             </Center>
                         )}
                     </Container>
                 </Splitter.Panel>
-                <Splitter.Panel defaultSize={320} min={'10%'} max={'45%'} collapsible>
+
+                {/* 右侧工具窗口面板 */}
+                <Splitter.Panel
+                    defaultSize={320}
+                    min={'10%'}
+                    max={'45%'}
+                    collapsible
+                >
                     <Container>
-                        <ToolWindowsPane/>
+                        <ToolWindowsPane />
                     </Container>
                 </Splitter.Panel>
             </Splitter>
 
+            {/* 全局搜索抽屉 */}
             <Drawer
                 title="搜索"
                 placement="left"
@@ -133,7 +200,7 @@ const AppContent: React.FC = () => {
                 open={searchPanelOpen}
                 closable={false}
                 maskClosable={true}
-                onClose={() => setSearchPanelOpen(false)}
+                onClose={handleCloseSearchPanel}
                 styles={{
                     header: {
                         height: '40px',
@@ -144,9 +211,9 @@ const AppContent: React.FC = () => {
                     }
                 }}
             >
-                <div style={{height: '100%'}}>
+                <div style={{ height: '100%' }}>
                     <GlobalSearch
-                        onClose={() => setSearchPanelOpen(false)}
+                        onClose={handleCloseSearchPanel}
                     />
                 </div>
             </Drawer>
@@ -176,7 +243,7 @@ export const Home: React.FC = () => {
         >
             <App>
                 <AppProvider>
-                    <AppContent/>
+                    <AppContent />
                 </AppProvider>
             </App>
         </ConfigProvider>

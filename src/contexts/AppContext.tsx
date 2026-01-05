@@ -1,6 +1,7 @@
 import React, {createContext, ReactNode, useContext, useRef, useState} from 'react';
 import {fileHistoryManager, FileHistoryRecord} from '../utils/uiUtils';
 import {detectFileType} from "../utils/fileCommonUtil";
+import {Config, updateFolderPath} from "../utils/config";
 
 export interface AppContextType {
     /** 当前选中的文件夹路径 */
@@ -31,6 +32,11 @@ export interface AppContextType {
     searchPanelOpen: boolean;
     /** 设置搜索面板开关 */
     setSearchPanelOpen: (open: boolean) => void;
+
+    /** 应用配置 */
+    config: Config | null;
+    /** 设置应用配置 */
+    setConfig: (config: Config | null) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -45,13 +51,18 @@ export const AppProvider: React.FC<AppProviderProps> = ({children}) => {
     const [fileHistory, setFileHistory] = useState<FileHistoryRecord[]>([]);
     const [titleBarVisible, setTitleBarVisible] = useState<boolean>(true);
     const [searchPanelOpen, setSearchPanelOpen] = useState<boolean>(false);
+    const [config, setConfig] = useState<Config | null>(null);
 
     const autoPlay = useRef(true); // 是否自动播放，当打开上次打开的视频时，不自动播放
 
     // 设置当前文件夹并加载历史记录
     const handleSetCurrentFolder = (folder: string | null) => {
         console.log('setCurrentFolder', folder);
+        if(!folder) return;
+
         setCurrentFolder(folder);
+        window.electronAPI.saveConfig(updateFolderPath(config, folder));
+        
         // 切换文件夹时清空当前文件
         setCurrentFile(null);
         if (folder) {
@@ -126,6 +137,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({children}) => {
         setTitleBarVisible,
         searchPanelOpen,
         setSearchPanelOpen,
+        config,
+        setConfig
     };
 
     return (

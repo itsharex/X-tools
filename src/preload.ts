@@ -14,6 +14,10 @@ interface ElectronAPI {
     loadConfig: () => Promise<Config>;
     /** 保存应用配置 */
     saveConfig: (config: Config) => Promise<void>;
+    /** 获取当前窗口的文件夹 */
+    getCurrentWindowFolder: () => Promise<string | null | undefined>;
+    /** 设置当前窗口的文件夹 */
+    setCurrentWindowFolder: (folderPath: string) => Promise<boolean>;
 
     // === 文件系统操作 ===
     /** 打开文件夹选择对话框 */
@@ -92,6 +96,8 @@ const electronAPI: ElectronAPI = {
     // 配置管理
     loadConfig: () => ipcRenderer.invoke('loadConfig') as Promise<Config>,
     saveConfig: (config: Config) => ipcRenderer.invoke('saveConfig', config) as Promise<void>,
+    getCurrentWindowFolder: () => ipcRenderer.invoke('getCurrentWindowFolder') as Promise<string | null | undefined>,
+    setCurrentWindowFolder: (folderPath: string) => ipcRenderer.invoke('setCurrentWindowFolder', folderPath) as Promise<boolean>,
 
     // 文件系统操作
     selectDirectory: () => ipcRenderer.invoke('selectDirectory') as Promise<string | null>,

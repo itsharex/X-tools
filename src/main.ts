@@ -70,7 +70,8 @@ if (started) {
 // 用于存储当前活动的搜索Worker线程
 const activeSearchWorkers = new Map<string, any>();
 
-
+// 存储窗口与文件夹的映射关系
+const windowFolderMap = new Map<Electron.BrowserWindow, string | undefined>();
 
 // 平台检测
 const isMac = process.platform === 'darwin';
@@ -294,7 +295,7 @@ function registerIpcHandlers() {
         const appPath = app.getAppPath();
         // 应用程序目录通常是 Resources/app.asar，所以我们需要返回到Resources目录
         // 使用跨平台的正则表达式处理路径分隔符
-        const resourcesPath = appPath.replace(/[\\\/]app\.asar$/, '');
+        const resourcesPath = appPath.replace(/[/\\]app\.asar$/, '');
         console.log('getAppPath: appPath =', appPath);
         console.log('getAppPath: resourcesPath =', resourcesPath);
         return resourcesPath;
@@ -311,6 +312,25 @@ function registerIpcHandlers() {
     // 获取当前平台是否为Mac
     ipcMain.handle('getIsMac', async () => {
         return isMac;
+    });
+
+    // 获取当前窗口的文件夹
+    ipcMain.handle('getCurrentWindowFolder', (event) => {
+        const window = BrowserWindow.fromWebContents(event.sender);
+        if (window) {
+            return windowFolderMap.get(window);
+        }
+        return null;
+    });
+
+    // 设置当前窗口的文件夹
+    ipcMain.handle('setCurrentWindowFolder', (event, folderPath: string) => {
+        const window = BrowserWindow.fromWebContents(event.sender);
+        if (window) {
+            windowFolderMap.set(window, folderPath);
+            return true;
+        }
+        return false;
     });
 
     // 搜索文件内容 - 使用Worker线程
@@ -478,6 +498,9 @@ const createWindow = (folderPath?: string) => {
         })
     });
 
+    // 记录窗口与文件夹的映射关系
+    windowFolderMap.set(newWindow, folderPath);
+
     // 如果这是第一个窗口，设置为global.mainWindow以兼容现有代码
     if (BrowserWindow.getAllWindows().length === 1) {
         (global as any).mainWindow = newWindow;
@@ -492,15 +515,11 @@ const createWindow = (folderPath?: string) => {
         );
     }
 
-    // 窗口准备好后，如果指定了文件夹路径，则设置初始文件夹
-    newWindow.webContents.once('did-finish-load', () => {
-        if (folderPath) {
-            newWindow.webContents.send('setInitialFolder', folderPath);
-        }
-    });
-
     // 窗口关闭时清理引用
     newWindow.on('closed', () => {
+        // 清理窗口与文件夹的映射关系
+        windowFolderMap.delete(newWindow);
+        
         // 如果关闭的是主窗口，重新指定一个主窗口
         if ((global as any).mainWindow === newWindow) {
             const remainingWindows = BrowserWindow.getAllWindows();
