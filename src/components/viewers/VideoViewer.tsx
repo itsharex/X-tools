@@ -64,7 +64,6 @@ const subtitlePanelStyle: CSSProperties = {
 const subtitleListStyle: CSSProperties = {
   flex: 1,
   overflowY: "auto",
-  marginTop: "10px",
 };
 
 const subtitlePanelHeaderStyle: CSSProperties = {
@@ -397,7 +396,7 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({ path }) => {
     );
     setFilteredSubtitles(filtered);
   }, [subtitles, searchKeyword]);
-  
+
   return (
     <div style={containerStyle}>
       <Splitter style={{ height: "100%" }} onResize={handleSplitterResize}>
