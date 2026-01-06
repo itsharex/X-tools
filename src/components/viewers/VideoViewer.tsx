@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, CSSProperties } from "react";
 import { Splitter } from "antd";
+import { EyeOutlined, EyeInvisibleOutlined, SearchOutlined } from "@ant-design/icons";
 import { toFileUrl, fullname, name } from "../../utils/fileCommonUtil";
 import {
   findSubtitleFiles,
@@ -69,10 +70,32 @@ const subtitleListStyle: CSSProperties = {
 const subtitlePanelHeaderStyle: CSSProperties = {
   fontSize: "16px",
   fontWeight: "bold",
+  marginBottom: "10px",
   paddingBottom: "5px",
   borderBottom: "1px solid #e0e0e0",
+  display: "flex",
+  flexDirection: "column",
+  gap: "8px",
 };
 
+// 移除不再使用的headerActionsStyle
+
+const iconButtonStyle: CSSProperties = {
+  cursor: "pointer",
+  fontSize: "16px",
+  padding: "4px",
+  borderRadius: "4px",
+  transition: "background-color 0.3s",
+};
+
+const searchInputStyle: CSSProperties = {
+  padding: "4px 8px",
+  fontSize: "14px",
+  border: "1px solid #d9d9d9",
+  borderRadius: "4px",
+  flex: 1,
+  minWidth: "200px",
+};
 const subtitleItemStyle = (isCurrent: boolean): CSSProperties => ({
   padding: "8px",
   marginBottom: "4px",
@@ -95,10 +118,36 @@ const subtitleItemTextStyle: CSSProperties = {
   whiteSpace: "pre-wrap",
 };
 
+const highlightStyle: CSSProperties = {
+  backgroundColor: "#ffeb3b",
+  padding: "1px 2px",
+  borderRadius: "2px",
+  fontWeight: "bold",
+};
+
+// 高亮关键词函数
+const highlightKeyword = (text: string, keyword: string): React.ReactNode => {
+  if (!keyword.trim()) {
+    return text;
+  }
+  
+  const parts = text.split(new RegExp(`(${keyword})`, "gi"));
+  return parts.map((part, index) => {
+    if (part.toLowerCase() === keyword.toLowerCase()) {
+      return <span key={index} style={highlightStyle}>{part}</span>;
+    }
+    return part;
+  });
+};
+
 const subtitleSelectStyle: CSSProperties = {
-  marginLeft: "10px",
-  padding: "4px",
-  fontSize: "14px",
+  marginLeft: "8px", // 减小左边距使其更紧凑
+  padding: "2px 6px", // 减小内边距使其更紧凑
+  fontSize: "13px", // 减小字体使其低调
+  border: "1px solid #d9d9d9",
+  borderRadius: "4px",
+  backgroundColor: "#fff",
+  cursor: "pointer",
 };
 
 // 获取视频播放进度的存储键
@@ -169,6 +218,14 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({ path }) => {
   const [subtitlePosition, setSubtitlePosition] = useState({ x: 0.5, y: 0.9 }); // 使用相对位置 (0-1)
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  
+  // 字幕显示控制状态
+  const [subtitleVisible, setSubtitleVisible] = useState(true);
+  
+  // 搜索功能状态
+  const [searchVisible, setSearchVisible] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [filteredSubtitles, setFilteredSubtitles] = useState<SubtitleItem[]>([]);
 
   // 处理面板大小变化
   const handleSplitterResize = (sizes: number[]) => {
@@ -326,7 +383,21 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({ path }) => {
       }
     }
   }, [currentSubtitle]);
-
+  
+  // 搜索过滤逻辑
+  useEffect(() => {
+    if (!searchKeyword.trim()) {
+      setFilteredSubtitles(subtitles);
+      return;
+    }
+    
+    const keyword = searchKeyword.toLowerCase();
+    const filtered = subtitles.filter(subtitle => 
+      subtitle.text.toLowerCase().includes(keyword)
+    );
+    setFilteredSubtitles(filtered);
+  }, [subtitles, searchKeyword]);
+  
   return (
     <div style={containerStyle}>
       <Splitter style={{ height: "100%" }} onResize={handleSplitterResize}>
@@ -354,7 +425,7 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({ path }) => {
             />
 
             {/* 当前字幕显示 */}
-            {currentSubtitle && (
+            {currentSubtitle && subtitleVisible && (
               <div
                 style={subtitleDisplayStyle(
                   isDragging,
@@ -382,23 +453,80 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({ path }) => {
           {subtitles.length > 0 && (
             <div style={subtitlePanelStyle}>
               <div style={subtitlePanelHeaderStyle}>
-                字幕列表
-                {subtitleFiles.length > 1 && (
-                  <select
-                    value={selectedSubtitleIndex}
-                    onChange={(e) => setSelectedSubtitleIndex(Number(e.target.value))}
-                    style={subtitleSelectStyle}
-                  >
-                    {subtitleFiles.map((file, index) => (
-                      <option key={index} value={index}>
-                        {getSubtitleDisplayName(file, index)}
-                      </option>
-                    ))}
-                  </select>
+                {/* 标题和操作按钮行 */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                  {/* 左侧：标题 + 字幕选择下拉菜单 */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span>字幕列表</span>
+                    {subtitleFiles.length > 1 && (
+                      <select
+                        value={selectedSubtitleIndex}
+                        onChange={(e) => setSelectedSubtitleIndex(Number(e.target.value))}
+                        style={subtitleSelectStyle}
+                      >
+                        {subtitleFiles.map((file, index) => (
+                          <option key={index} value={index}>
+                            {getSubtitleDisplayName(file, index)}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                  
+                  {/* 右侧：其他操作按钮 */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    {/* 字幕显示/隐藏按钮 */}
+                    <div 
+                      style={iconButtonStyle}
+                      onClick={() => setSubtitleVisible(!subtitleVisible)}
+                      title={subtitleVisible ? "隐藏字幕" : "显示字幕"}
+                    >
+                      {subtitleVisible ? <EyeOutlined /> : <EyeInvisibleOutlined />}
+                    </div>
+                    
+                    {/* 搜索按钮 */}
+                    <div 
+                      style={iconButtonStyle}
+                      onClick={() => setSearchVisible(!searchVisible)}
+                      title={searchVisible ? "关闭搜索" : "搜索字幕"}
+                    >
+                      <SearchOutlined />
+                    </div>
+                  </div>
+                </div>
+                
+                {/* 搜索框行 */}
+                {searchVisible && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%" }}>
+                    <input
+                      type="text"
+                      style={searchInputStyle}
+                      placeholder="搜索字幕..."
+                      value={searchKeyword}
+                      onChange={(e) => setSearchKeyword(e.target.value)}
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === "Escape") {
+                          setSearchVisible(false);
+                          setSearchKeyword("");
+                        }
+                      }}
+                    />
+                    <div 
+                      style={iconButtonStyle}
+                      onClick={() => {
+                        setSearchVisible(false);
+                        setSearchKeyword("");
+                      }}
+                      title="关闭搜索"
+                    >
+                      ✕
+                    </div>
+                  </div>
                 )}
               </div>
               <div ref={subtitlesRef} style={subtitleListStyle}>
-                {subtitles.map((subtitle) => (
+                {filteredSubtitles.map((subtitle) => (
                   <div
                     key={subtitle.index}
                     className="subtitle-item"
@@ -414,7 +542,7 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({ path }) => {
                       {subtitle.index}
                     </div>
                     <div style={subtitleItemTextStyle}>
-                      {subtitle.text}
+                      {highlightKeyword(subtitle.text, searchKeyword)}
                     </div>
                   </div>
                 ))}

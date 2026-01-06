@@ -90,7 +90,13 @@ export interface SubtitleItem {
  */
 function timeToSeconds(timeStr: string): number {
   // 替换逗号为点号，统一处理
-  const normalizedTime = timeStr.replace(',', '.');
+  let normalizedTime = timeStr.replace(',', '.');
+  
+  // 处理无效的时间格式（如 00:00:55.6.0），只保留第一个点号
+  normalizedTime = normalizedTime.replace(/^(.*?)\.(.*)$/, (match, beforeDot, afterDot) => {
+    // 将点号后的所有内容合并，只保留一个点号
+    return `${beforeDot}.${afterDot.replace(/\./g, '')}`;
+  });
   
   // 匹配三种时间格式：
   // 1. 小时:分钟:秒.毫秒 (例如 01:23:45.678)
