@@ -62,6 +62,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({children}) => {
 
         setCurrentFolder(folder);
         window.electronAPI.saveConfig(updateFolderPath(config, folder));
+        window.electronAPI.setCurrentWindowFolder(folder);
         
         // 切换文件夹时清空当前文件
         setCurrentFile(null);

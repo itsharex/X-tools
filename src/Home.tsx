@@ -117,7 +117,6 @@ const AppContent: React.FC = () => {
                         if (config.recentFolders.length > 0) {
                             console.log('设置最近文件夹:', config.recentFolders[0].path);
                             setCurrentFolder(config.recentFolders[0].path);
-                            window.electronAPI.setCurrentWindowFolder(config.recentFolders[0].path);
                         } else {
                             console.log('没有最近文件夹');
                         }
