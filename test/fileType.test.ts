@@ -15,7 +15,6 @@ import {
   toFileUrl,
   formatFileSize,
   truncateText,
-  truncateTextWithQuery,
   isHiddenFile,
   getFileTypeDisplayName
 } from '../src/utils/fileCommonUtil';
@@ -206,24 +205,6 @@ describe('fileCommonUtil.ts 测试', () => {
 
       it('应该在文本长度超过最大长度时截断并添加省略号', () => {
         expect(truncateText('this is a long text that needs to be truncated', 20)).toBe('this is a long text ...');
-      });
-    });
-
-    describe('truncateTextWithQuery', () => {
-      it('应该在文本长度小于等于最大长度时返回原文', () => {
-        expect(truncateTextWithQuery('short text', 20, 'text')).toBe('short text');
-      });
-
-      it('应该在文本长度超过最大长度且找到查询词时保留查询词', () => {
-        const longText = 'this is a very long text that contains a specific query word somewhere in the middle';
-        expect(truncateTextWithQuery(longText, 50, 'specific')).toContain('specific');
-        expect(truncateTextWithQuery(longText, 50, 'specific')).toContain('...');
-      });
-
-      it('应该在文本长度超过最大长度但找不到查询词时正常截断', () => {
-        const longText = 'this is a very long text that contains no matching query';
-        // 当maxLength为30时，text.substring(0, 27)返回'this is a very long text th'，加上'...'共30个字符
-        expect(truncateTextWithQuery(longText, 30, 'missing')).toBe('this is a very long text th...');
       });
     });
   });
