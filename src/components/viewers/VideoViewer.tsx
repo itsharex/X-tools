@@ -54,15 +54,21 @@ const subtitlePanelStyle: CSSProperties = {
   width: "100%",
   height: "100%",
   backgroundColor: "#f5f5f5",
-  overflowY: "auto",
   padding: "10px",
   borderLeft: "1px solid #e0e0e0",
+  display: "flex",
+  flexDirection: "column",
+};
+
+const subtitleListStyle: CSSProperties = {
+  flex: 1,
+  overflowY: "auto",
+  marginTop: "10px",
 };
 
 const subtitlePanelHeaderStyle: CSSProperties = {
   fontSize: "16px",
   fontWeight: "bold",
-  marginBottom: "10px",
   paddingBottom: "5px",
   borderBottom: "1px solid #e0e0e0",
 };
@@ -391,7 +397,7 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({ path }) => {
                   </select>
                 )}
               </div>
-              <div ref={subtitlesRef}>
+              <div ref={subtitlesRef} style={subtitleListStyle}>
                 {subtitles.map((subtitle) => (
                   <div
                     key={subtitle.index}
