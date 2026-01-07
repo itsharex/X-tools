@@ -47,9 +47,9 @@ body {
     margin-right: 8px;
     display: inline-block;
     width: 1rem;
-    height: 1rem;
+    height: 0.85rem;
     cursor: pointer;
-    border-radius: 4px;
+    border-radius: 2px;
     border: 1px solid gray;
     transition: background-color 0.2s;
 }
