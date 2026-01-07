@@ -1,8 +1,9 @@
-import React, {useState, useEffect} from 'react';
-import {Button, Tooltip} from 'antd';
-import {ToolOutlined} from '@ant-design/icons';
-import {ToolWindow} from './toolWindow';
-import {toolWindowManager} from './toolWindowManager';
+import React, { useState, useEffect } from 'react';
+import { Button, Tooltip } from 'antd';
+import { ToolOutlined } from '@ant-design/icons';
+import { ToolWindow } from './toolWindow';
+import { toolWindowManager } from './toolWindowManager';
+import { VersionChecker } from '../common/VersionChecker';
 import './ToolWindowsPane.css';
 
 export const ToolWindowsPane: React.FC = () => {
@@ -32,8 +33,8 @@ export const ToolWindowsPane: React.FC = () => {
         return (
             <div className="tool-windows-pane empty">
                 <div className="empty-state">
-                    <ToolOutlined style={{fontSize: 24, color: '#ccc'}}/>
-                    <div style={{color: '#999', marginTop: 8}}>暂无工具窗口</div>
+                    <ToolOutlined style={{ fontSize: 24, color: '#ccc' }} />
+                    <div style={{ color: '#999', marginTop: 8 }}>暂无工具窗口</div>
                 </div>
             </div>
         );
@@ -43,7 +44,16 @@ export const ToolWindowsPane: React.FC = () => {
         <div className="tool-windows-pane">
             {/* 工具窗口显示区域 */}
             <div className="tool-window-content">
-                {activeWindow && activeWindow.view}
+                {/* 主要查看器区域，占据大部分空间 */}
+                <div className="viewer-container">
+                    {activeWindow && activeWindow.view}
+                </div>
+                
+                {/* 版本检查器区域，位于底部 */}
+                <div className="checker-container">
+                    {/* 这里显示版本更新通知 */}
+                    <VersionChecker />
+                </div>
             </div>
 
             {/* 右侧图标工具栏 */}
@@ -55,7 +65,7 @@ export const ToolWindowsPane: React.FC = () => {
                             size="small"
                             className={`toolbar-button ${activeWindowId === window.id ? 'active' : ''}`}
                             onClick={() => toggleWindow(window.id)}
-                            icon={window.icon || <ToolOutlined/>}
+                            icon={window.icon || <ToolOutlined />}
                         />
                     </Tooltip>
                 ))}

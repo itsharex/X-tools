@@ -314,6 +314,11 @@ function registerIpcHandlers() {
         return isMac;
     });
 
+    // 获取当前操作系统平台
+    ipcMain.handle('getPlatform', async () => {
+        return process.platform;
+    });
+
     // 获取当前窗口的文件夹
     ipcMain.handle('getCurrentWindowFolder', (event) => {
         const window = BrowserWindow.fromWebContents(event.sender);

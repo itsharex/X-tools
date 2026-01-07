@@ -78,6 +78,8 @@ interface ElectronAPI {
     getAppDescription: () => Promise<string>;
     /** 获取当前平台是否为Mac */
     getIsMac: () => Promise<boolean>;
+    /** 获取当前操作系统平台 */
+    getPlatform: () => Promise<string>;
     /** 获取应用资源目录路径 */
     getAppPath: () => Promise<string>;
 }
@@ -134,6 +136,7 @@ const electronAPI: ElectronAPI = {
     getAppDescription: () => ipcRenderer.invoke('getAppDescription') as Promise<string>,
     // 平台信息
     getIsMac: () => ipcRenderer.invoke('getIsMac') as Promise<boolean>,
+    getPlatform: () => ipcRenderer.invoke('getPlatform') as Promise<string>,
 };
 
 // 暴露API给渲染进程

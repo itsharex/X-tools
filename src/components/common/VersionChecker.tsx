@@ -1,0 +1,92 @@
+import React, { useState, useEffect } from 'react';
+import { Card, Tag } from 'antd';
+import { LinkOutlined, CloseOutlined } from '@ant-design/icons';
+
+interface VersionUpdateInfo {
+    version: string;
+    message: string;
+    link: string;
+}
+
+export const VersionChecker: React.FC = () => {
+    const [updateInfo, setUpdateInfo] = useState<VersionUpdateInfo | null>(null);
+    const [isVisible, setIsVisible] = useState(true);
+
+    // 检查版本更新
+    const checkVersionUpdate = async () => {
+        try {
+            // 获取当前应用版本和操作系统平台信息
+            const [appVersion, platform] = await Promise.all([
+                window.electronAPI.getAppVersion(),
+                window.electronAPI.getPlatform()
+            ]);
+
+            // 格式化版本字符串：appname-version-os
+            const currentVersion = `x-tools-${appVersion}-${platform}`;
+
+            // const response = await fetch(`http://localhost:5173/version?v=${currentVersion}`);
+            const response = await fetch(`https://thinking.vip/version?v=${currentVersion}`);
+            if (!response.ok) {
+                console.error(`HTTP error! status: ${response.status}`);
+                return;
+            }
+            const data = await response.json();
+            setUpdateInfo(data);
+        } catch (error) {
+            console.error('检查版本更新失败:', error);
+        }
+    };
+
+    useEffect(() => {
+        checkVersionUpdate();
+    }, []);
+
+    // 关闭通知
+    const handleClose = () => {
+        setIsVisible(false);
+    };
+
+    return (
+        <>
+            {/* 版本更新通知UI */}
+            {updateInfo && updateInfo.message && isVisible && (
+                <Card size="small" style={{ margin: '8px', borderRadius: '4px' }}>
+                    {/* 第一行：发现新版本 + 版本号 + 关闭按钮 */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>发现新版本</span>
+                            <Tag color="blue">{updateInfo.version}</Tag>
+                        </div>
+                        
+                        {/* 关闭按钮 */}
+                        <a 
+                            href="#" 
+                            onClick={(e) => {
+                                e.preventDefault();
+                                handleClose();
+                            }}
+                            style={{ fontSize: '12px', color: '#999', cursor: 'pointer' }}
+                        >
+                            <CloseOutlined style={{ fontSize: '14px' }} />
+                        </a>
+                    </div>
+
+                    {/* 第二行：信息带链接 */}
+                    <div>
+                        {updateInfo.message} 
+                        <a 
+                            href="#" 
+                            onClick={(e) => {
+                                e.preventDefault();
+                                window.electronAPI.openExternal(updateInfo.link);
+                            }}
+                            style={{ marginLeft: '8px', color: '#1890ff', cursor: 'pointer', textDecoration: 'underline' }}
+                        >
+                            查看更新 <LinkOutlined style={{ marginLeft: '4px', fontSize: '12px' }} />
+                        </a>
+                    </div>
+                </Card>
+            )}
+        </>
+    );
+};
