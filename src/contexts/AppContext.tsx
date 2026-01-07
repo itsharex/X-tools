@@ -37,6 +37,16 @@ export interface AppContextType {
     config: Config | null;
     /** 设置应用配置 */
     setConfig: (config: Config | null) => void;
+
+    /** 左侧面板是否可见 */
+    leftPanelVisible: boolean;
+    /** 设置左侧面板可见性 */
+    setLeftPanelVisible: (visible: boolean) => void;
+
+    /** 右侧面板是否可见 */
+    rightPanelVisible: boolean;
+    /** 设置右侧面板可见性 */
+    setRightPanelVisible: (visible: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -52,6 +62,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({children}) => {
     const [titleBarVisible, setTitleBarVisible] = useState<boolean>(true);
     const [searchPanelOpen, setSearchPanelOpen] = useState<boolean>(false);
     const [config, setConfig] = useState<Config | null>(null);
+    const [leftPanelVisible, setLeftPanelVisible] = useState<boolean>(true);
+    const [rightPanelVisible, setRightPanelVisible] = useState<boolean>(true);
 
     const autoPlay = useRef(true); // 是否自动播放，当打开上次打开的视频时，不自动播放
 
@@ -139,7 +151,11 @@ export const AppProvider: React.FC<AppProviderProps> = ({children}) => {
         searchPanelOpen,
         setSearchPanelOpen,
         config,
-        setConfig
+        setConfig,
+        leftPanelVisible,
+        setLeftPanelVisible,
+        rightPanelVisible,
+        setRightPanelVisible,
     };
 
     return (

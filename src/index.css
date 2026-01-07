@@ -17,6 +17,7 @@ body {
 
 /* 为按钮等可交互元素添加 no-drag 属性，确保它们可以正常响应点击事件 */
 .top-bar button,
+.top-bar span,
 .top-bar .ant-btn,
 .top-bar .ant-dropdown-trigger,
 .top-bar .no-drag {
@@ -36,4 +37,19 @@ body {
 
 .border{
     border:1px solid;
+}
+
+/* 自定义图标悬停效果 */
+.span-icon:hover {
+    background-color: rgba(0, 0, 0, 0.08);
+}
+.span-icon {
+    margin-right: 8px;
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    cursor: pointer;
+    border-radius: 4px;
+    border: 1px solid gray;
+    transition: background-color 0.2s;
 }

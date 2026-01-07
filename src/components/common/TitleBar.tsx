@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 
 // 第三方库导入
-import { Button, Dropdown, Flex, message, Modal } from "antd";
+import {Button, Divider, Dropdown, Flex, message, Modal} from "antd";
 import {
     CopyOutlined,
     DeleteOutlined,
@@ -41,6 +41,10 @@ export const TitleBar: React.FC = () => {
         titleBarVisible,
         setTitleBarVisible,
         setSearchPanelOpen,
+        leftPanelVisible,
+        setLeftPanelVisible,
+        rightPanelVisible,
+        setRightPanelVisible,
         config,
         setConfig,
     } = useAppContext();
@@ -422,31 +426,31 @@ export const TitleBar: React.FC = () => {
                         alignItems: 'center',
                         gap: 8
                     }}>
-                        {/* 搜索按钮 */}
                         <Button
                             type="text"
                             icon={<SearchOutlined />}
                             title="打开搜索"
-                            onClick={handleOpenSearchPanel}
+                            onClick={() => setSearchPanelOpen(true)}
                             style={{ padding: 0, width: 24, height: 24, borderRadius: 4 }}
                         />
-
-                        {/* 重新加载按钮 */}
-                        <Button
-                            type="text"
-                            icon={<SyncOutlined />}
-                            title="重新加载界面"
-                            onClick={handleReload}
-                            style={{ padding: 0, width: 24, height: 24, borderRadius: 4 }}
+                        <Divider vertical />
+                        <span
+                            className="span-icon"
+                            style={{ borderLeft: '4px solid gray' }}
+                            title="隐藏/显示左边栏"
+                            onClick={() => setLeftPanelVisible(!leftPanelVisible)}
                         />
-
-                        {/* 隐藏标题栏按钮 */}
-                        <Button
-                            type="text"
-                            icon={<EyeInvisibleOutlined />}
-                            title="隐藏标题栏"
-                            onClick={handleHideTitleBar}
-                            style={{ padding: 0, width: 24, height: 24, borderRadius: 4 }}
+                        <span
+                            className="span-icon"
+                            style={{ borderTop: '4px solid gray' }}
+                            title="隐藏/显示标题栏"
+                            onClick={() => setTitleBarVisible(!titleBarVisible)}
+                        />
+                        <span
+                            className="span-icon"
+                            style={{ borderRight: '4px solid gray' }}
+                            title="隐藏/显示右边栏"
+                            onClick={() => setRightPanelVisible(!rightPanelVisible)}
                         />
 
                         {/* Windows 窗口控制按钮 */}

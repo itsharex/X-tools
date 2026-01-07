@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, {useEffect, useState} from 'react';
 
 // 第三方库
 import { App, ConfigProvider, Drawer, Splitter } from "antd";
@@ -22,7 +22,11 @@ import { fullname } from './utils/fileCommonUtil';
 const WINDOW_SIZE_KEY = 'x-tools-window-size';
 
 const AppContent: React.FC = () => {
-    const { currentFile, titleBarVisible, searchPanelOpen, config, setSearchPanelOpen, setCurrentFolder, setConfig } = useAppContext();
+    const {
+        setCurrentFolder, currentFile, titleBarVisible, searchPanelOpen, setSearchPanelOpen,config,setConfig, leftPanelVisible, setLeftPanelVisible, rightPanelVisible, setRightPanelVisible
+    } = useAppContext();
+
+    const [sizes, setSizes] = useState<number[]>([320, undefined, 320]);
 
     /**
      * 保存窗口大小到local storage
@@ -57,6 +61,27 @@ const AppContent: React.FC = () => {
      */
     const handleCloseSearchPanel = (): void => {
         setSearchPanelOpen(false);
+    };
+    // 监听面板大小变化事件
+    const handleSplitterChange = (sizes: number[]) => {
+        console.log('面板大小变化:', sizes);
+
+        setSizes(sizes);
+
+        // 当面板大小达到最小值时自动隐藏
+        if (0 < sizes[0] && sizes[0] < 150) {
+            setSizes([0, undefined, sizes[2]])
+            setLeftPanelVisible(false);
+        } else {
+            setLeftPanelVisible(true);
+        }
+
+        if (0 < sizes[2] && sizes[2] < 150) {
+            setSizes([sizes[0], undefined, 0]);
+            setRightPanelVisible(false);
+        } else {
+            setRightPanelVisible(true)
+        }
     };
 
     // 窗口大小相关的副作用
@@ -122,6 +147,13 @@ const AppContent: React.FC = () => {
         }
     }, [config]);
 
+    useEffect(() => {
+        if (leftPanelVisible && sizes[0] === 0) setSizes([320, undefined, sizes[2]]);
+        if (!leftPanelVisible && sizes[0] !== 0) setSizes([0, undefined, sizes[2]]);
+        if (rightPanelVisible && sizes[2] === 0) setSizes([sizes[0], undefined, 320]);
+        if (!rightPanelVisible && sizes[2] !== 0) setSizes([sizes[0], undefined, 0]);
+    }, [leftPanelVisible, rightPanelVisible]);
+
     // 窗口按钮显示状态相关的副作用
     useEffect(() => {
         if (window.electronAPI?.setWindowButtonVisibility) {
@@ -140,43 +172,27 @@ const AppContent: React.FC = () => {
             {/* 标题栏 */}
             <TitleBar />
 
-            {/* 主分割器布局 */}
-            <Splitter style={{ height: titleBarVisible ? 'calc(100vh - 40px)' : '100vh' }}>
-                {/* 左侧文件树面板 */}
-                <Splitter.Panel
-                    defaultSize={320}
-                    min={'10%'}
-                    max={'45%'}
-                    collapsible
-                >
-                    <FileTree />
+            <Splitter style={{height: titleBarVisible ? 'calc(100vh - 40px)' : '100vh'}} onResize={handleSplitterChange}>
+                <Splitter.Panel min={99} max={'45%'} size={sizes[0]}>
+                    <FileTree/>
                 </Splitter.Panel>
-
-                {/* 中间文件预览面板 */}
-                <Splitter.Panel style={{ padding: 0 }}>
-                    <Container style={{ position: 'relative' }}>
+                <Splitter.Panel style={{padding: 0}} size={sizes[1]}>
+                    <Container style={{position: 'relative'}}>
                         {currentFile ? (
                             <FileViewer
                                 filePath={currentFile}
                                 fileName={fullname(currentFile)}
                             />
                         ) : (
-                            <Center style={{ color: 'gray' }}>
+                            <Center style={{color: 'gray'}}>
                                 请在左侧选择一个文件以预览内容
                             </Center>
                         )}
                     </Container>
                 </Splitter.Panel>
-
-                {/* 右侧工具窗口面板 */}
-                <Splitter.Panel
-                    defaultSize={320}
-                    min={'10%'}
-                    max={'45%'}
-                    collapsible
-                >
+                <Splitter.Panel min={99} max={'45%'} size={sizes[2]}>
                     <Container>
-                        <ToolWindowsPane />
+                        <ToolWindowsPane/>
                     </Container>
                 </Splitter.Panel>
             </Splitter>
