@@ -15,13 +15,12 @@ const config: ForgeConfig = {
         name: 'X-tools',
         executableName: 'X-tools',
         // 为不同平台设置不同的图标
-        icon: path.resolve(__dirname, 'public/icon.ico'),
+        // Electron Packager will automatically select the appropriate icon file for each platform
+        // based on the file extension (ico for Windows, icns for macOS, png for Linux)
+        icon: path.resolve(__dirname, 'public/icon'),
         extraResource: [
             path.join(__dirname, 'public/pdfjs'),
         ],
-        // 仅打包当前平台和架构，加速打包过程
-        platform: process.platform,
-        arch: process.arch,
     },
     rebuildConfig: {},
     hooks: {
@@ -64,10 +63,10 @@ const config: ForgeConfig = {
         }
     },
     makers: [
-        new MakerSquirrel({}),
+        // new MakerSquirrel({}),
         new MakerZIP({}, ['darwin', 'win32']),
-        new MakerRpm({}),
-        new MakerDeb({}),
+        // new MakerRpm({}),
+        // new MakerDeb({}),
     ],
     plugins: [
         new VitePlugin({
