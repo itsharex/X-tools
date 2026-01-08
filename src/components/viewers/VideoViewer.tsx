@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, CSSProperties } from "react";
 import { Splitter } from "antd";
-import { EyeFilled, SearchOutlined } from "@ant-design/icons";
+import { SearchOutlined, FileTextOutlined, LeftOutlined, RightOutlined } from "@ant-design/icons";
 import { toFileUrl, fullname, name } from "../../utils/fileCommonUtil";
 import {
   findSubtitleFiles,
@@ -81,7 +81,7 @@ const subtitlePanelHeaderStyle: CSSProperties = {
 
 const iconButtonStyle: CSSProperties = {
   cursor: "pointer",
-  fontSize: "16px",
+  fontSize: "1rem",
   padding: "4px",
   borderRadius: "4px",
   transition: "background-color 0.3s",
@@ -226,12 +226,21 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({ path }) => {
   const [searchKeyword, setSearchKeyword] = useState("");
   const [filteredSubtitles, setFilteredSubtitles] = useState<SubtitleItem[]>([]);
 
+  // 字幕列表面板显示状态
+  const [subtitlePanelVisible, setSubtitlePanelVisible] = useState(true);
+
   // 视频可播放状态
   const [canPlay, setCanPlay] = useState(false);
+
+  // 视频区域鼠标悬停状态
+  const [videoHovered, setVideoHovered] = useState(false);
 
   // 处理面板大小变化
   const handleSplitterResize = (sizes: number[]) => {
     setPanelSizes(sizes);
+    if (sizes[1] < 120) {
+      setSubtitlePanelVisible(false);
+    }
   };
 
   // 处理视频可播放事件
@@ -380,7 +389,9 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({ path }) => {
         }
 
         // 设置字幕面板大小
-        setPanelSizes(["70%", 320]);
+        if (subtitlePanelVisible) {
+          setPanelSizes(["70%", 320]);
+        }
       } else {
         setSubtitles([]);
         setCurrentSubtitle(null);
@@ -431,6 +442,8 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({ path }) => {
           <div
             ref={videoContainerRef}
             style={videoContainerStyle}
+            onMouseEnter={() => setVideoHovered(true)}
+            onMouseLeave={() => setVideoHovered(false)}
           >
             <video
               width="100%"
@@ -461,16 +474,45 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({ path }) => {
                 ))}
               </div>
             )}
+
+            {/* 展开字幕列表图标 */}
+            {!subtitlePanelVisible && videoHovered && subtitles.length > 0 && (
+              <div
+                style={{
+                  position: "absolute",
+                  right: "20px",
+                  top: "20px",
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "50%",
+                  backgroundColor: "#aaa",
+                  color: "white",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  cursor: "pointer",
+                  fontSize: "20px",
+                  transition: "opacity 0.3s"
+                }}
+                onClick={() => {
+                  setSubtitlePanelVisible(true);
+                  // 恢复面板大小
+                  setPanelSizes(["70%", 320]);
+                }}
+                title="展开字幕列表"
+              >
+                <LeftOutlined />
+              </div>
+            )}
           </div>
         </Splitter.Panel>
 
         {/* 字幕列表区域 */}
         <Splitter.Panel
-          size={panelSizes[1]}
-          min={0}
+          size={subtitlePanelVisible ? panelSizes[1] : 0}
+          min={80}
           max="50%"
-          collapsible
-          style={{ overflow: "hidden" }}
+          style={{ overflow: "hidden", padding: "0px" }}
         >
           {subtitles.length > 0 && (
             <div style={subtitlePanelStyle}>
@@ -515,6 +557,15 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({ path }) => {
                       title={searchVisible ? "关闭搜索" : "搜索字幕"}
                     >
                       <SearchOutlined />
+                    </div>
+
+                    {/* 字幕面板隐藏/显示按钮 */}
+                    <div
+                      style={iconButtonStyle}
+                      onClick={() => setSubtitlePanelVisible(!subtitlePanelVisible)}
+                      title={subtitlePanelVisible ? "隐藏字幕列表" : "显示字幕列表"}
+                    >
+                      <RightOutlined />
                     </div>
                   </div>
                 </div>
