@@ -122,13 +122,68 @@ const highlightKeyword = (text: string, keyword: string): React.ReactNode => {
     return text;
   }
 
-  const parts = text.split(new RegExp(`(${keyword})`, "gi"));
-  return parts.map((part, index) => {
-    if (part.toLowerCase() === keyword.toLowerCase()) {
-      return <span key={index} style={highlightStyle}>{part}</span>;
+  try {
+    // 尝试将关键词作为正则表达式处理
+    const regex = new RegExp(keyword, "gi");
+    const matches: Array<{ text: string; start: number; end: number }> = [];
+    let match;
+    
+    // 找出所有匹配的位置
+    while ((match = regex.exec(text)) !== null) {
+      matches.push({
+        text: match[0],
+        start: match.index,
+        end: match.index + match[0].length
+      });
+      
+      // 防止零长度匹配导致的无限循环
+      if (match.index === regex.lastIndex) {
+        regex.lastIndex++;
+      }
     }
-    return part;
-  });
+    
+    if (matches.length === 0) {
+      return text;
+    }
+    
+    // 构建高亮后的文本片段
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+    
+    matches.forEach((match, index) => {
+      // 添加匹配前的文本
+      if (match.start > lastIndex) {
+        parts.push(text.substring(lastIndex, match.start));
+      }
+      
+      // 添加高亮的匹配文本
+      parts.push(
+        <span key={index} style={highlightStyle}>
+          {match.text}
+        </span>
+      );
+      
+      lastIndex = match.end;
+    });
+    
+    // 添加最后一个匹配后的文本
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
+    
+    return parts;
+  } catch (error) {
+    // 如果正则表达式无效，回退到普通字符串高亮
+    const lowerKeyword = keyword.toLowerCase();
+    const parts = text.split(new RegExp(`(${keyword})`, "gi"));
+    
+    return parts.map((part, index) => {
+      if (part.toLowerCase() === lowerKeyword) {
+        return <span key={index} style={highlightStyle}>{part}</span>;
+      }
+      return part;
+    });
+  }
 };
 
 const subtitleSelectStyle: CSSProperties = {
@@ -415,10 +470,18 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({ path }) => {
       return;
     }
 
-    const keyword = searchKeyword.toLowerCase();
-    const filtered = subtitles.filter(subtitle =>
-      subtitle.text.toLowerCase().includes(keyword)
-    );
+    const filtered = subtitles.filter(subtitle => {
+      // 尝试将搜索关键词作为正则表达式处理
+      try {
+        // 使用i标志忽略大小写
+        const regex = new RegExp(searchKeyword, "i");
+        return regex.test(subtitle.text);
+      } catch (error) {
+        // 如果不是有效的正则表达式，回退到普通字符串匹配
+        const keyword = searchKeyword.toLowerCase();
+        return subtitle.text.toLowerCase().includes(keyword);
+      }
+    });
     setFilteredSubtitles(filtered);
   }, [subtitles, searchKeyword]);
 
