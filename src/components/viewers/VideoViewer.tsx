@@ -226,9 +226,17 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({ path }) => {
   const [searchKeyword, setSearchKeyword] = useState("");
   const [filteredSubtitles, setFilteredSubtitles] = useState<SubtitleItem[]>([]);
 
+  // 视频可播放状态
+  const [canPlay, setCanPlay] = useState(false);
+
   // 处理面板大小变化
   const handleSplitterResize = (sizes: number[]) => {
     setPanelSizes(sizes);
+  };
+
+  // 处理视频可播放事件
+  const handleCanPlay = () => {
+    setCanPlay(true);
   };
 
   // 更新字幕和保存播放进度
@@ -266,7 +274,49 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({ path }) => {
         y: absoluteY - rect.height * subtitlePosition.y,
       });
     }
-  };
+  }; 
+  
+  // 视频路径变化时的处理
+  useEffect(() => {
+    // 查找字幕文件
+    const searchSubtitles = async () => {
+      const files = await findSubtitleFiles(path);
+      setSubtitleFiles(files);
+      setSelectedSubtitleIndex(0);
+    };
+
+    searchSubtitles();
+
+    setCanPlay(false);
+  }, [path]);
+
+  // 视频路径变化时的处理
+  useEffect(() => {
+    // 恢复播放进度
+    const video = videoRef.current;
+    if (video) {
+      const savedProgress = getVideoProgress(path);
+      if (savedProgress > 0) {
+        // 定义恢复进度的函数
+        const restoreProgress = () => {
+          if (video.duration) {
+            const END_THRESHOLD = 2; // 2秒的阈值
+            if ((video.duration - savedProgress) > END_THRESHOLD) {
+              video.currentTime = savedProgress;
+              console.log(`Restored video progress: ${savedProgress}s`);
+            } else {
+              console.log(`Video progress (${savedProgress}s) is at the end (${video.duration}s), skipping restore`);
+            }
+          }
+        };
+
+        // 如果视频可以播放，直接恢复进度
+        if (canPlay) {
+          restoreProgress();
+        }
+      }
+    }
+  }, [canPlay]);
 
   // 拖动相关事件处理
   useEffect(() => {
@@ -308,32 +358,6 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({ path }) => {
       document.removeEventListener("mouseup", handleMouseUp);
     };
   }, [isDragging, dragOffset]);
-
-  // 视频路径变化时的处理
-  useEffect(() => {
-    // 查找字幕文件
-    const searchSubtitles = async () => {
-      const files = await findSubtitleFiles(path);
-      setSubtitleFiles(files);
-      setSelectedSubtitleIndex(0);
-    };
-
-    searchSubtitles();
-
-    // 恢复播放进度
-    const video = videoRef.current;
-    if (video) {
-      const savedProgress = getVideoProgress(path);
-      if (savedProgress > 0) {
-        // 设置一个小的延迟确保视频已经准备好
-        const timer = setTimeout(() => {
-          video.currentTime = savedProgress;
-          console.log(`Restored video progress: ${savedProgress}s`);
-        }, 100);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [path]);
 
   // 加载选中的字幕文件
   useEffect(() => {
@@ -417,6 +441,7 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({ path }) => {
               controls
               playsInline
               preload="metadata"
+              onCanPlay={handleCanPlay}
               onTimeUpdate={handleTimeUpdate}
               autoPlay={autoPlay}
             />
