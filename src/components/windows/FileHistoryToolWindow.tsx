@@ -1,8 +1,9 @@
 import React from 'react';
 import {Button, Card, Empty, List, Tooltip, Typography} from 'antd';
-import {ClockCircleOutlined, DeleteOutlined, FileTextOutlined, HistoryOutlined} from '@ant-design/icons';
+import {ClockCircleOutlined, DeleteOutlined, HistoryOutlined} from '@ant-design/icons';
 import {useAppContext} from '../../contexts/AppContext';
 import {FileHistoryRecord} from '../../utils/uiUtils';
+import {FileIcon} from '../common/FileIcon';
 import './FileHistoryToolWindow.css';
 // 创建工具窗口实例
 import {ToolWindow} from './toolWindow';
@@ -95,7 +96,7 @@ export const FileHistoryToolWindow: React.FC = () => {
                             >
                                 <div className="history-item-content">
                                     <div className="history-item-main">
-                                        <FileTextOutlined className="file-icon"/>
+                                        <FileIcon fileName={record.filePath} className="file-icon"/>
                                         <Tooltip title={record.filePath}>
                                             <Text strong className="file-name">
                                                 {fullname(record.filePath)}

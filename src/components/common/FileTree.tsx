@@ -1,10 +1,10 @@
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {ConfigProvider, message, Tree} from "antd";
 import type {DataNode, TreeProps} from 'antd/es/tree';
 import {FileNode} from '../../types';
-import {detectFileType} from '../../utils/fileCommonUtil';
 import {useAppContext} from '../../contexts/AppContext';
-import {DownOutlined, FileImageOutlined, FileOutlined, FilePdfOutlined, FileTextOutlined, FolderOutlined, PlayCircleOutlined} from '@ant-design/icons';
+import {DownOutlined} from '@ant-design/icons';
+import {FileIcon} from './FileIcon';
 
 // 为Tree组件定义的节点类型
 export type TreeNodeWithMeta = DataNode & {
@@ -74,26 +74,6 @@ export const FileTree: React.FC = () => {
         }
     }, [currentFolder]);
 
-    // 根据文件类型获取对应图标
-    const getFileIcon = useCallback((node: FileNode) => {
-        if (node.isDirectory) {
-            return <FolderOutlined style={{marginRight: 8}}/>;
-        }
-        const fileType = detectFileType(node.name);
-        switch (fileType) {
-            case 'text':
-                return <FileTextOutlined style={{marginRight: 8}}/>;
-            case 'image':
-                return <FileImageOutlined style={{marginRight: 8}}/>;
-            case 'video':
-                return <PlayCircleOutlined style={{marginRight: 8}}/>;
-            case 'pdf':
-                return <FilePdfOutlined style={{marginRight: 8}}/>;
-            default:
-                return <FileOutlined style={{marginRight: 8}}/>;
-        }
-    }, []);
-
     // 加载当前目录下的文件列表
     async function loadFileList() {
         if (currentFolder && window.electronAPI) {
@@ -119,7 +99,11 @@ export const FileTree: React.FC = () => {
                 title={node.name}
                 style={{cursor: node.isDirectory ? 'pointer' : 'default'}}
             >
-                {getFileIcon(node)}
+                <FileIcon 
+                    fileName={node.name} 
+                    isDirectory={node.isDirectory} 
+                    style={{marginRight: 8}} 
+                />
                 {node.name}
             </div>), key: node.id, meta: node, isLeaf: !node.isDirectory
         };
@@ -154,7 +138,7 @@ export const FileTree: React.FC = () => {
 
         try {
             // 不再设置全局loading状态，避免影响用户体验
-            const children = await window.electronAPI!.getDirectoryChildren(meta.path);
+            const children = await window.electronAPI.getDirectoryChildren(meta.path);
 
             // 更新文件列表中的子节点
             const updateNodeChildren = (nodeList: FileNode[]): FileNode[] => {

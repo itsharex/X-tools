@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, CSSProperties } from "react";
 import { Splitter } from "antd";
-import { SearchOutlined, FileTextOutlined, LeftOutlined, RightOutlined } from "@ant-design/icons";
+import { SearchOutlined, LeftOutlined, RightOutlined } from "@ant-design/icons";
 import { toFileUrl, fullname, name } from "../../utils/fileCommonUtil";
 import {
   findSubtitleFiles,
