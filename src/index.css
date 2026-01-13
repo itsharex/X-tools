@@ -53,10 +53,10 @@ body {
     transition: background-color 0.2s;
 }
 
-.text-content {
+.dictionary-text-content {
     font-size: 14px;
     line-height: 22px;
 }
-.text-content p {
+.dictionary-text-content p {
     margin-bottom: 12px;
 }

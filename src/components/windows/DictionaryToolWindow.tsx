@@ -144,9 +144,9 @@ const DictionaryPanel: React.FC = () => {
 
     return (
         <Card
-            styles={{ 
-                root: { margin: 0, overflow: 'hidden', borderRadius: 0, height: '100%',display:'flex',flexDirection:'column' },
-                body: { flex: 1,overflow:'hidden' }
+            styles={{
+                root: { margin: 0, overflow: 'hidden', borderRadius: 0, height: '100%', display: 'flex', flexDirection: 'column' },
+                body: { flex: 1, overflow: 'hidden' }
             }}
             size="small"
             title={
@@ -274,9 +274,9 @@ const DictionaryPanel: React.FC = () => {
                     <div style={{ marginBottom: 8 }}>
                         <Text type="secondary">
                             {debouncedSearchTerm.trim() ?
-                            `找到 ${searchResults.length} 条结果` :
-                            `已启用 ${dictionaryManager.getEnabledDictionaries().length}/${dictionaryManager.dictionaries.size} 个词典`
-                        }
+                                `找到 ${searchResults.length} 条结果` :
+                                `已启用 ${dictionaryManager.getEnabledDictionaries().length}/${dictionaryManager.dictionaries.size} 个词典`
+                            }
                         </Text>
                     </div>
 
@@ -285,25 +285,33 @@ const DictionaryPanel: React.FC = () => {
                             style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}
                             dataSource={searchResults}
                             renderItem={(entry, index) => (
-                                <List.Item key={index} className="text-content" style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid #f0f0f0', flexDirection: 'column', alignItems: 'flex-start', width: '100%' }}>
+                                <List.Item key={index} style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid #f0f0f0', flexDirection: 'column', alignItems: 'flex-start', width: '100%' }}>
                                     <div>
                                         {/* 显示catalog */}
                                         {entry.catalog.length > 0 && (
-                                            <div style={{ marginBottom: 4 }}>
+                                            <div>
                                                 <Text type="secondary" style={{ fontSize: '12px', marginRight: 8 }}>
                                                     {entry.catalog.join(' > ')}
                                                 </Text>
                                             </div>
                                         )}
-                                        <Title level={5}>
+                                        {/* 显示相关词条 */}
+                                        {entry.terms.length > 1 && (
+                                            <div>
+                                                <Text type="secondary" style={{ fontSize: '12px' }}>
+                                                    {entry.terms.filter(t => t !== entry.term).join(' ')}
+                                                </Text>
+                                            </div>
+                                        )}
+                                        <Title level={5} style={{ marginTop: 4, marginBottom: 4 }}>
                                             {entry.term}
                                         </Title>
                                     </div>
 
                                     {/* 直接引用元素，保持原汁原味 */}
-                                    <div style={{ fontSize: '14px', lineHeight: 1.6, overflowWrap: 'break-word', wordBreak: 'break-word' }}>
+                                    <div>
                                         {entry.definition.map((element, defIndex) => (
-                                            <div key={defIndex} dangerouslySetInnerHTML={{ __html: element.outerHTML }} />
+                                            <div className="dictionary-text-content" key={defIndex} dangerouslySetInnerHTML={{ __html: element.outerHTML }} />
                                         ))}
                                     </div>
                                 </List.Item>
