@@ -160,7 +160,7 @@ export function fullname(filePath: string): string {
  * 获取文件名（不包含扩展名）
  * @param filePath 文件路径
  */
-export function name(filePath: string): string {
+export function nameWithoutExtension(filePath: string): string {
   const filename = fullname(filePath);
   const idx = filename.lastIndexOf('.');
   if (idx === -1) return filename;

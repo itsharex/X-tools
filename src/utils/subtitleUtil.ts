@@ -3,7 +3,7 @@
 // =======================================
 
 import { FileNode } from '../types';
-import { getExtension, dirname, name, join } from './fileCommonUtil';
+import { getExtension, dirname, nameWithoutExtension, join } from './fileCommonUtil';
 
 // =======================================
 // 字幕文件相关功能
@@ -33,7 +33,7 @@ export function isSubtitleFile(name: string): boolean {
 export async function findSubtitleFiles(videoPath: string): Promise<string[]> {
   try {
     const videoDir = dirname(videoPath);
-    const videoName = name(videoPath);
+    const videoName = nameWithoutExtension(videoPath);
     
     // 项目仅在 Electron 环境下运行，直接使用 electronAPI
     const children = await window.electronAPI.getDirectoryChildren(videoDir);
@@ -49,7 +49,7 @@ export async function findSubtitleFiles(videoPath: string): Promise<string[]> {
         if (!SUBTITLE_EXTENSIONS.has(fileExt)) return false;
         
         // 处理带有语言扩展的字幕文件（如 video.en.srt）
-        const subtitleBaseName = name(fileName);
+        const subtitleBaseName = nameWithoutExtension(fileName);
         
         // 情况1：完全匹配（video.srt）
         if (subtitleBaseName === videoName) return true;

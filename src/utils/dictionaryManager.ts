@@ -27,7 +27,7 @@ export interface DictionaryManager {
 export function createDictionaryManager(): DictionaryManager {
     const dictionaries: Map<string, Dictionary> = new Map();
     const listeners: Map<string, Set<() => void>> = new Map();
-    
+
     // 触发事件
     const emit = (event: string) => {
         const eventListeners = listeners.get(event);
@@ -35,16 +35,16 @@ export function createDictionaryManager(): DictionaryManager {
             eventListeners.forEach(listener => listener());
         }
     };
-    
+
     /**
      * 从本地存储加载词典
      */
     const loadFromStorage = async (): Promise<void> => {
         const savedDictionaries = loadDictionariesFromStorage();
-        
+
         // 清空当前词典列表
         dictionaries.clear();
-        
+
         // 重新加载所有词典
         for (const savedDict of savedDictionaries) {
             try {
@@ -68,11 +68,11 @@ export function createDictionaryManager(): DictionaryManager {
                 dictionaries.set(savedDict.filePath, errorDictionary);
             }
         }
-        
+
         // 触发change事件
         emit('change');
     };
-    
+
     /**
      * 保存词典到本地存储
      */
@@ -84,10 +84,10 @@ export function createDictionaryManager(): DictionaryManager {
             filePath: dict.filePath,
             enabled: dict.enabled
         }));
-        
+
         saveDictionariesToStorage(dictionariesToSave);
     };
-    
+
     /**
      * 添加词典
      * @param filePath 词典文件路径
@@ -97,7 +97,7 @@ export function createDictionaryManager(): DictionaryManager {
         if (dictionaries.has(filePath)) {
             return;
         }
-        
+
         try {
             const dictionary = await parseMarkdownToDictionary(filePath);
             dictionaries.set(filePath, dictionary);
@@ -115,14 +115,14 @@ export function createDictionaryManager(): DictionaryManager {
             // 将带有错误信息的词典添加到列表中
             dictionaries.set(filePath, errorDictionary);
         }
-        
+
         // 保存到本地存储
         saveToStorage();
-        
+
         // 触发change事件
         emit('change');
     };
-    
+
     /**
      * 移除词典
      * @param dictionaryId 词典ID
@@ -131,12 +131,12 @@ export function createDictionaryManager(): DictionaryManager {
         if (dictionaries.delete(dictionaryId)) {
             // 保存到本地存储
             saveToStorage();
-            
+
             // 触发change事件
             emit('change');
         }
     };
-    
+
     /**
      * 切换词典启用状态
      * @param dictionaryId 词典ID
@@ -147,15 +147,15 @@ export function createDictionaryManager(): DictionaryManager {
             dictionary.enabled = !dictionary.enabled;
             // 更新Map中的值
             dictionaries.set(dictionaryId, dictionary);
-            
+
             // 保存到本地存储
             saveToStorage();
-            
+
             // 触发change事件
             emit('change');
         }
     };
-    
+
     /**
      * 将词典上移一位
      * @param dictionaryId 词典ID
@@ -163,25 +163,25 @@ export function createDictionaryManager(): DictionaryManager {
     const moveDictionaryUp = (dictionaryId: string): void => {
         const entries = Array.from(dictionaries.entries());
         const index = entries.findIndex(([id]) => id === dictionaryId);
-        
+
         if (index > 0) {
             // 交换位置
             [entries[index], entries[index - 1]] = [entries[index - 1], entries[index]];
-            
+
             // 创建新的Map，保持新的顺序
             dictionaries.clear();
             entries.forEach(([id, dictionary]) => {
                 dictionaries.set(id, dictionary);
             });
-            
+
             // 保存到本地存储
             saveToStorage();
-            
+
             // 触发change事件
             emit('change');
         }
     };
-    
+
     /**
      * 将词典下移一位
      * @param dictionaryId 词典ID
@@ -189,25 +189,25 @@ export function createDictionaryManager(): DictionaryManager {
     const moveDictionaryDown = (dictionaryId: string): void => {
         const entries = Array.from(dictionaries.entries());
         const index = entries.findIndex(([id]) => id === dictionaryId);
-        
+
         if (index < entries.length - 1) {
             // 交换位置
             [entries[index], entries[index + 1]] = [entries[index + 1], entries[index]];
-            
+
             // 创建新的Map，保持新的顺序
             dictionaries.clear();
             entries.forEach(([id, dictionary]) => {
                 dictionaries.set(id, dictionary);
             });
-            
+
             // 保存到本地存储
             saveToStorage();
-            
+
             // 触发change事件
             emit('change');
         }
     };
-    
+
     /**
      * 搜索所有启用的词典
      * @param term 搜索词
@@ -217,20 +217,30 @@ export function createDictionaryManager(): DictionaryManager {
         if (!term.trim()) {
             return [];
         }
-        
+
         const enabledDictionaries = getEnabledDictionaries();
         const results: DictionaryEntry[] = [];
-        
+
         enabledDictionaries.forEach(dictionary => {
-            const matchingEntries = dictionary.entries.filter(entry => 
-                entry.term.includes(term.trim())
+            const matchingEntries = dictionary.entries.filter(entry =>
+                entry.term.toLowerCase().includes(term.toLowerCase().trim())
             );
             results.push(...matchingEntries);
         });
-        
+
+        // 如果没有包含词的，那就用搜索词包含词条搜索
+        if (results.length === 0) {
+            enabledDictionaries.forEach(dictionary => {
+                const matchingEntries = dictionary.entries.filter(entry =>
+                    term.toLowerCase().includes(entry.term.toLowerCase().trim())
+                );
+                results.push(...matchingEntries);
+            });
+        }
+
         return results;
     };
-    
+
     /**
      * 获取所有启用的词典
      * @returns 启用的词典数组
@@ -238,7 +248,7 @@ export function createDictionaryManager(): DictionaryManager {
     const getEnabledDictionaries = (): Dictionary[] => {
         return Array.from(dictionaries.values()).filter(dict => dict.enabled);
     };
-    
+
     // 实现事件监听方法
     const on = (event: 'change', callback: () => void) => {
         if (!listeners.has(event)) {
@@ -246,14 +256,14 @@ export function createDictionaryManager(): DictionaryManager {
         }
         listeners.get(event)?.add(callback);
     };
-    
+
     const off = (event: 'change', callback: () => void) => {
         const eventListeners = listeners.get(event);
         if (eventListeners) {
             eventListeners.delete(callback);
         }
     };
-    
+
     return {
         dictionaries,
         addDictionary,

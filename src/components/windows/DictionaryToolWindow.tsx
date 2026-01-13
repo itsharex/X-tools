@@ -3,6 +3,7 @@ import { Button, Card, Input, Empty, Space, Typography, message, Checkbox, Toolt
 import { DeleteOutlined, SettingOutlined, UpOutlined, DownOutlined, SearchOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import { ToolWindow } from './toolWindow';
 import { createDictionaryManager } from '../../utils/dictionaryManager';
+import { nameWithoutExtension } from '../../utils/fileCommonUtil';
 
 /**
  * Word icon component
@@ -163,7 +164,7 @@ const DictionaryPanel: React.FC = () => {
                             size="small"
                             style={{ marginBottom: 12 }}
                         >
-                            添加词典（Markdown文件）
+                            添加词典（Markdown 文件）
                         </Button>
 
                         {/* Dictionary List */}
@@ -182,7 +183,7 @@ const DictionaryPanel: React.FC = () => {
                                                 }}
                                             >
                                                 <Text>
-                                                    {dict.name}
+                                                    {nameWithoutExtension(dict.name)}
                                                 </Text>
                                             </Checkbox>
                                             {dict.error && (
