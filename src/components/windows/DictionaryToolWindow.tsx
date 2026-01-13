@@ -107,9 +107,17 @@ const DictionaryPanel: React.FC = () => {
     useEffect(() => {
         // Handle selection change
         const handleSelectionChange = () => {
+            // 检查当前焦点是否在输入框中，如果是则不处理
+            const activeElement = document.activeElement;
+            if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+                return;
+            }
+
             const selectedText = window.getSelection()?.toString().trim();
             if (selectedText && selectedText.length > 0) {
                 setSearchTerm(selectedText);
+            } else {
+                setSearchTerm('');
             }
         };
 
@@ -316,7 +324,9 @@ const DictionaryPanel: React.FC = () => {
                             style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}
                             dataSource={searchResults}
                             renderItem={(entry, index) => (
-                                <List.Item key={index} style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid #f0f0f0', flexDirection: 'column', alignItems: 'flex-start', width: '100%' }}>
+                                <List.Item key={index}
+                                    style={{  borderBottom: '1px solid #f0f0f0'}}
+                                >
                                     <div>
                                         {/* 显示catalog */}
                                         {entry.catalog.length > 0 && (
