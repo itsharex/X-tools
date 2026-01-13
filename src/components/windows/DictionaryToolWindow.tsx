@@ -1,9 +1,27 @@
+// React hooks
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+
+// Ant Design components
 import { Button, Card, Input, Empty, Space, Typography, message, Checkbox, Tooltip, List, Flex } from 'antd';
-import { DeleteOutlined, SettingOutlined, UpOutlined, DownOutlined, SearchOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
+
+// Ant Design icons
+import { 
+    DeleteOutlined, 
+    SettingOutlined, 
+    UpOutlined, 
+    DownOutlined, 
+    SearchOutlined, 
+    PlusOutlined, 
+    ReloadOutlined 
+} from '@ant-design/icons';
+
+// Project components
 import { ToolWindow } from './toolWindow';
+
+// Project utils
 import { createDictionaryManager } from '../../utils/dictionaryManager';
 import { nameWithoutExtension } from '../../utils/fileCommonUtil';
+
 
 /**
  * Word icon component
@@ -17,6 +35,9 @@ const { Text, Title } = Typography;
 
 
 const DictionaryPanel: React.FC = () => {
+    // =========================================================================
+    // State hooks
+    // =========================================================================
     // 使用词典管理器管理多个词典
     const [dictionaryManager] = useState(() => createDictionaryManager());
     const [searchTerm, setSearchTerm] = useState<string>('');
@@ -25,7 +46,83 @@ const DictionaryPanel: React.FC = () => {
     const [isSettingsVisible, setIsSettingsVisible] = useState<boolean>(false);
     const [dictionaries, setDictionaries] = useState<Array<{ id: string; name: string; filePath: string; enabled: boolean; error?: string }>>([]);
 
+    // =========================================================================
+    // Event handlers
+    // =========================================================================
+    // Add selected files as dictionaries
+    const addDictionaries = useCallback(async (files: string[]) => {
+        setLoading(true);
+        try {
+            for (const filePath of files) {
+                await dictionaryManager.addDictionary(filePath);
+            }
+            message.success(`成功添加 ${files.length} 个词典`);
+        } catch (error) {
+            console.error('添加词典失败:', error);
+            message.error('添加词典失败');
+        } finally {
+            setLoading(false);
+        }
+    }, [dictionaryManager]);
 
+    // Handle file selection
+    const handleSelectFiles = useCallback(async () => {
+        try {
+            const files = await window.electronAPI.openFileDialog({
+                properties: ['openFile', 'multiSelections'],
+                filters: [{ name: 'Markdown Files', extensions: ['md', 'markdown', 'mdown', 'mkd'] }]
+            });
+
+            if (files && files.length > 0) {
+                await addDictionaries(files);
+            }
+        } catch (error) {
+            console.error('选择文件失败:', error);
+            message.error('选择文件失败');
+        }
+    }, [addDictionaries]);
+
+    // Remove dictionary
+    const handleRemoveDictionary = useCallback((dictionaryId: string) => {
+        dictionaryManager.removeDictionary(dictionaryId);
+        message.success('词典已移除');
+    }, [dictionaryManager]);
+
+    // =========================================================================
+    // Other functions
+    // =========================================================================
+    // 搜索结果（使用useMemo优化）
+    const searchResults = useMemo(() => {
+        if (!debouncedSearchTerm.trim()) {
+            return [];
+        }
+        return dictionaryManager.search(debouncedSearchTerm.trim());
+    }, [debouncedSearchTerm, dictionaryManager]);
+
+    // =========================================================================
+    // Effect hooks
+    // =========================================================================
+    // 初始化 Effect - 没有依赖项的 useEffect
+    // 添加选中文本监听
+    useEffect(() => {
+        // Handle selection change
+        const handleSelectionChange = () => {
+            const selectedText = window.getSelection()?.toString().trim();
+            if (selectedText && selectedText.length > 0) {
+                setSearchTerm(selectedText);
+            }
+        };
+
+        // 添加selectionchange事件监听器
+        document.addEventListener('selectionchange', handleSelectionChange);
+
+        // 组件卸载时移除事件监听器
+        return () => {
+            document.removeEventListener('selectionchange', handleSelectionChange);
+        };
+    }, []);
+
+    // 依赖状态的 Effect
     // 组件初始化时从本地存储加载词典
     useEffect(() => {
         const loadDictionaries = async () => {
@@ -66,14 +163,6 @@ const DictionaryPanel: React.FC = () => {
         };
     }, [dictionaryManager]);
 
-    // Handle selection change
-    const handleSelectionChange = useCallback(() => {
-        const selectedText = window.getSelection()?.toString().trim();
-        if (selectedText && selectedText.length > 0) {
-            setSearchTerm(selectedText);
-        }
-    }, []);
-
     // Debounce search term to avoid frequent searches
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -82,64 +171,6 @@ const DictionaryPanel: React.FC = () => {
 
         return () => clearTimeout(timer);
     }, [searchTerm]);
-
-    // 添加选中文本监听
-    useEffect(() => {
-        // 添加selectionchange事件监听器
-        document.addEventListener('selectionchange', handleSelectionChange);
-
-        // 组件卸载时移除事件监听器
-        return () => {
-            document.removeEventListener('selectionchange', handleSelectionChange);
-        };
-    }, [handleSelectionChange]);
-
-    // Add selected files as dictionaries
-    const addDictionaries = useCallback(async (files: string[]) => {
-        setLoading(true);
-        try {
-            for (const filePath of files) {
-                await dictionaryManager.addDictionary(filePath);
-            }
-            message.success(`成功添加 ${files.length} 个词典`);
-        } catch (error) {
-            console.error('添加词典失败:', error);
-            message.error('添加词典失败');
-        } finally {
-            setLoading(false);
-        }
-    }, [dictionaryManager]);
-
-    // Handle file selection
-    const handleSelectFiles = useCallback(async () => {
-        try {
-            const files = await window.electronAPI.openFileDialog({
-                properties: ['openFile', 'multiSelections'],
-                filters: [{ name: 'Markdown Files', extensions: ['md', 'markdown', 'mdown', 'mkd'] }]
-            });
-
-            if (files && files.length > 0) {
-                await addDictionaries(files);
-            }
-        } catch (error) {
-            console.error('选择文件失败:', error);
-            message.error('选择文件失败');
-        }
-    }, [addDictionaries]);
-
-    // Remove dictionary
-    const handleRemoveDictionary = useCallback((dictionaryId: string) => {
-        dictionaryManager.removeDictionary(dictionaryId);
-        message.success('词典已移除');
-    }, [dictionaryManager]);
-
-    // 搜索结果（使用useMemo优化）
-    const searchResults = useMemo(() => {
-        if (!debouncedSearchTerm.trim()) {
-            return [];
-        }
-        return dictionaryManager.search(debouncedSearchTerm.trim());
-    }, [debouncedSearchTerm, dictionaryManager]);
 
 
     return (
