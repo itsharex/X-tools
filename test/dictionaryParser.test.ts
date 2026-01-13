@@ -23,7 +23,8 @@ jest.mock('../src/utils/markdown', () => ({
 }));
 
 const mockParseMarkdown = parseMarkdown as jest.MockedFunction<typeof parseMarkdown>;
-const mockReadFile = (window as any).electronAPI.readFile as jest.MockedFunction<typeof (window as any).electronAPI.readFile>;
+// 为 mockReadFile 创建类型定义
+const mockReadFile = (window as any).electronAPI.readFile as jest.MockedFunction<(filePath: string) => Promise<string>>;
 
 describe('dictionaryParser.ts 测试', () => {
     beforeEach(() => {
@@ -74,36 +75,36 @@ describe('dictionaryParser.ts 测试', () => {
             expect(result.name).toBe(testFileName);
             expect(result.filePath).toBe(testFilePath);
             expect(result.enabled).toBe(true);
-            expect(result.entries).toHaveLength(6); // 6个词条：第一章, 词条1, 词条2, 别名2, 第二章, 词条3
+            expect(result.entries).toHaveLength(5); // 5个条目：第一章, 词条1, 词条2 别名2, 第二章, 词条3
 
-            // 验证每个词条
+            // 验证每个条目
             expect(result.entries[0]).toEqual(expect.objectContaining({
                 term: '第一章',
+                terms: ['第一章'],
                 catalog: [],
             }));
 
             expect(result.entries[1]).toEqual(expect.objectContaining({
                 term: '词条1',
+                terms: ['词条1'],
                 catalog: ['第一章'],
             }));
 
             expect(result.entries[2]).toEqual(expect.objectContaining({
                 term: '词条2',
+                terms: ['词条2', '别名2'],
                 catalog: ['第一章'],
             }));
 
             expect(result.entries[3]).toEqual(expect.objectContaining({
-                term: '别名2',
-                catalog: ['第一章'],
-            }));
-
-            expect(result.entries[4]).toEqual(expect.objectContaining({
                 term: '第二章',
+                terms: ['第二章'],
                 catalog: [],
             }));
 
-            expect(result.entries[5]).toEqual(expect.objectContaining({
+            expect(result.entries[4]).toEqual(expect.objectContaining({
                 term: '词条3',
+                terms: ['词条3'],
                 catalog: ['第二章'],
             }));
 
@@ -318,11 +319,11 @@ describe('dictionaryParser.ts 测试', () => {
             });
 
             return parseMarkdownToDictionary('/test/path/test.md').then(result => {
-                expect(result.entries).toHaveLength(4); // 词条, 测试词条, Test, Term
+                expect(result.entries).toHaveLength(2); // 2个条目：词条, 测试词条 Test Term
                 expect(result.entries[0].term).toBe('词条'); // 一级标题
+                expect(result.entries[0].terms).toEqual(['词条']);
                 expect(result.entries[1].term).toBe('测试词条'); // 二级标题分割后的第一个词条
-                expect(result.entries[2].term).toBe('Test'); // 二级标题分割后的第二个词条
-                expect(result.entries[3].term).toBe('Term'); // 二级标题分割后的第三个词条
+                expect(result.entries[1].terms).toEqual(['测试词条', 'Test', 'Term']);
             });
         });
 
@@ -343,12 +344,11 @@ describe('dictionaryParser.ts 测试', () => {
             });
 
             return parseMarkdownToDictionary('/test/path/test.md').then(result => {
-                expect(result.entries).toHaveLength(5);
+                expect(result.entries).toHaveLength(2);
                 expect(result.entries[0].term).toBe('词条'); // 一级标题
+                expect(result.entries[0].terms).toEqual(['词条']);
                 expect(result.entries[1].term).toBe('词条1'); // 二级标题分割后的第一个词条
-                expect(result.entries[2].term).toBe('词条2'); // 二级标题分割后的第二个词条
-                expect(result.entries[3].term).toBe('词条3'); // 二级标题分割后的第三个词条
-                expect(result.entries[4].term).toBe('词条4'); // 二级标题分割后的第四个词条
+                expect(result.entries[1].terms).toEqual(['词条1', '词条2', '词条3', '词条4']);
             });
         });
 
@@ -369,10 +369,11 @@ describe('dictionaryParser.ts 测试', () => {
             });
 
             return parseMarkdownToDictionary('/test/path/test.md').then(result => {
-                expect(result.entries).toHaveLength(3);
+                expect(result.entries).toHaveLength(2);
                 expect(result.entries[0].term).toBe('词条'); // 一级标题
+                expect(result.entries[0].terms).toEqual(['词条']);
                 expect(result.entries[1].term).toBe('词条123'); // 二级标题分割后的第一个词条
-                expect(result.entries[2].term).toBe('测试456'); // 二级标题分割后的第二个词条
+                expect(result.entries[1].terms).toEqual(['词条123', '测试456']);
             });
         });
     });

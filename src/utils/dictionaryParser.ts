@@ -17,6 +17,7 @@ export interface Dictionary {
  */
 export interface DictionaryEntry {
     term: string;
+    terms: string[];
     definition: Element[];
     catalog: string[];
     header: HTMLElement;
@@ -98,15 +99,16 @@ export async function parseMarkdownToDictionary(filePath: string): Promise<Dicti
             }
         }
         
-        // 为每个分割后的词条创建一个条目
-        terms.forEach(term => {
+        // 创建一个条目，包含所有分割后的词条
+        if (terms.length > 0) {
             entries.push({
-                term,
+                term: terms[0], // 使用第一个词条作为主要词条
+                terms, // 存储所有分割后的词条
                 definition,
                 catalog,
                 header
             });
-        });
+        }
     });
     
     return {

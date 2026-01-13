@@ -221,29 +221,34 @@ export function createDictionaryManager(): DictionaryManager {
         const enabledDictionaries = getEnabledDictionaries();
         const results: DictionaryEntry[] = [];
 
-        // 首先查找完全匹配的词条
+        const searchTerm = term.toLowerCase().trim();
+
+        // 首先查找完全匹配的词条（term或terms中的任何一个）
         enabledDictionaries.forEach(dictionary => {
             const exactMatches = dictionary.entries.filter(entry =>
-                entry.term.toLowerCase() === term.toLowerCase().trim()
+                entry.term.toLowerCase() === searchTerm ||
+                entry.terms.some(t => t.toLowerCase() === searchTerm)
             );
             results.push(...exactMatches);
         });
 
-        // 如果没有完全匹配的结果，再查找包含搜索词的词条
+        // 如果没有完全匹配的结果，再查找包含搜索词的词条（term或terms中的任何一个）
         if (results.length === 0) {
             enabledDictionaries.forEach(dictionary => {
                 const partialMatches = dictionary.entries.filter(entry =>
-                    entry.term.toLowerCase().includes(term.toLowerCase().trim())
+                    entry.term.toLowerCase().includes(searchTerm) ||
+                    entry.terms.some(t => t.toLowerCase().includes(searchTerm))
                 );
                 results.push(...partialMatches);
             });
         }
 
-        // 如果没有包含词的，那就用搜索词包含词条搜索
+        // 如果没有包含词的，那就用搜索词包含词条搜索（term或terms中的任何一个）
         if (results.length === 0) {
             enabledDictionaries.forEach(dictionary => {
                 const matchingEntries = dictionary.entries.filter(entry =>
-                    term.toLowerCase().includes(entry.term.toLowerCase().trim())
+                    searchTerm.includes(entry.term.toLowerCase().trim()) ||
+                    entry.terms.some(t => searchTerm.includes(t.toLowerCase().trim()))
                 );
                 results.push(...matchingEntries);
             });
