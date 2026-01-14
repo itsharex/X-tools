@@ -173,6 +173,7 @@ const AppContent: React.FC = () => {
         if (!leftPanelVisible && sizes[0] !== 0) setSizes([0, undefined, sizes[2]]);
         if (rightPanelVisible && sizes[2] === 0) setSizes([sizes[0], undefined, 320]);
         if (!rightPanelVisible && sizes[2] !== 0) setSizes([sizes[0], undefined, 0]);
+        if (!leftPanelVisible && !rightPanelVisible) setSizes([0, undefined, 0]);
     }, [leftPanelVisible, rightPanelVisible]);
 
     // 窗口按钮显示状态相关的副作用

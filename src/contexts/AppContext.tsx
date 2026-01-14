@@ -1,4 +1,4 @@
-import React, {createContext, ReactNode, useContext, useRef, useState} from 'react';
+import React, {createContext, ReactNode, useContext, useRef, useState, useEffect} from 'react';
 import {fileHistoryManager, FileHistoryRecord} from '../utils/uiUtils';
 import {detectFileType} from "../utils/fileCommonUtil";
 import {Config, updateFolderPath} from "../utils/config";
@@ -62,10 +62,26 @@ export const AppProvider: React.FC<AppProviderProps> = ({children}) => {
     const [titleBarVisible, setTitleBarVisible] = useState<boolean>(true);
     const [searchPanelOpen, setSearchPanelOpen] = useState<boolean>(false);
     const [config, setConfig] = useState<Config | null>(null);
-    const [leftPanelVisible, setLeftPanelVisible] = useState<boolean>(true);
-    const [rightPanelVisible, setRightPanelVisible] = useState<boolean>(true);
+    const [leftPanelVisible, setLeftPanelVisible] = useState<boolean>(() => {
+        const saved = localStorage.getItem('leftPanelVisible');
+        return saved !== null ? JSON.parse(saved) : true;
+    });
+    const [rightPanelVisible, setRightPanelVisible] = useState<boolean>(() => {
+        const saved = localStorage.getItem('rightPanelVisible');
+        return saved !== null ? JSON.parse(saved) : true;
+    });
 
     const autoPlay = useRef(true); // 是否自动播放，当打开上次打开的视频时，不自动播放
+
+    // 保存左侧面板可见性到localStorage
+    useEffect(() => {
+        localStorage.setItem('leftPanelVisible', JSON.stringify(leftPanelVisible));
+    }, [leftPanelVisible]);
+
+    // 保存右侧面板可见性到localStorage
+    useEffect(() => {
+        localStorage.setItem('rightPanelVisible', JSON.stringify(rightPanelVisible));
+    }, [rightPanelVisible]);
 
     // 设置当前文件夹并加载历史记录
     const handleSetCurrentFolder = (folder: string | null) => {
@@ -89,7 +105,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({children}) => {
                 // 从路径中提取文件名来检测文件类型
                 const fileName = lastFile.filePath.split(/[\\/]/).pop() || '';
                 // 如果上次打开的是视频，不自动播放，避免突兀。
-                if (detectFileType(fileName) == "video") autoPlay.current = false;
+                if (detectFileType(fileName) == "video" || detectFileType(fileName) == "audio") autoPlay.current = false;
 
                 setCurrentFile(lastFile.filePath);
             }
