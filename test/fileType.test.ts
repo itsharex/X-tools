@@ -6,11 +6,12 @@ import {
   isTextFile,
   isImageFile,
   isVideoFile,
+  isAudioFile,
   isPdfFile,
   dirname,
   join,
   fullname,
-  name,
+  nameWithoutExtension,
   normalizePath,
   toFileUrl,
   formatFileSize,
@@ -69,17 +70,26 @@ describe('fileCommonUtil.ts 测试', () => {
         expect(detectFileType('report.PDF')).toBe('pdf');
       });
 
+      it('应该正确检测音频文件', () => {
+        expect(detectFileType('audio.mp3')).toBe('audio');
+        expect(detectFileType('sound.wav')).toBe('audio');
+        expect(detectFileType('music.m4a')).toBe('audio');
+        expect(detectFileType('song.flac')).toBe('audio');
+        expect(detectFileType('track.ogg')).toBe('audio');
+      });
+
       it('应该将未知类型文件标记为other', () => {
         expect(detectFileType('file.unknown')).toBe('other');
         expect(detectFileType('file_without_extension')).toBe('other');
       });
     });
 
-    describe('isTextFile, isImageFile, isVideoFile, isPdfFile', () => {
+    describe('isTextFile, isImageFile, isVideoFile, isAudioFile, isPdfFile', () => {
       it('isTextFile 应该正确识别文本文件', () => {
         expect(isTextFile('document.txt')).toBe(true);
         expect(isTextFile('image.jpg')).toBe(false);
         expect(isTextFile('video.mp4')).toBe(false);
+        expect(isTextFile('audio.mp3')).toBe(false);
         expect(isTextFile('document.pdf')).toBe(false);
       });
 
@@ -87,6 +97,7 @@ describe('fileCommonUtil.ts 测试', () => {
         expect(isImageFile('image.jpg')).toBe(true);
         expect(isImageFile('document.txt')).toBe(false);
         expect(isImageFile('video.mp4')).toBe(false);
+        expect(isImageFile('audio.mp3')).toBe(false);
         expect(isImageFile('document.pdf')).toBe(false);
       });
 
@@ -94,7 +105,16 @@ describe('fileCommonUtil.ts 测试', () => {
         expect(isVideoFile('video.mp4')).toBe(true);
         expect(isVideoFile('document.txt')).toBe(false);
         expect(isVideoFile('image.jpg')).toBe(false);
+        expect(isVideoFile('audio.mp3')).toBe(false);
         expect(isVideoFile('document.pdf')).toBe(false);
+      });
+
+      it('isAudioFile 应该正确识别音频文件', () => {
+        expect(isAudioFile('audio.mp3')).toBe(true);
+        expect(isAudioFile('document.txt')).toBe(false);
+        expect(isAudioFile('image.jpg')).toBe(false);
+        expect(isAudioFile('video.mp4')).toBe(false);
+        expect(isAudioFile('document.pdf')).toBe(false);
       });
 
       it('isPdfFile 应该正确识别PDF文件', () => {
@@ -102,6 +122,7 @@ describe('fileCommonUtil.ts 测试', () => {
         expect(isPdfFile('document.txt')).toBe(false);
         expect(isPdfFile('image.jpg')).toBe(false);
         expect(isPdfFile('video.mp4')).toBe(false);
+        expect(isPdfFile('audio.mp3')).toBe(false);
       });
     });
   });
@@ -139,20 +160,20 @@ describe('fileCommonUtil.ts 测试', () => {
       });
     });
 
-    describe('name', () => {
+    describe('nameWithoutExtension', () => {
       it('应该正确获取不包含扩展名的文件名', () => {
-        expect(name('/path/to/file.txt')).toBe('file');
-        expect(name('C:\\Users\\John\\file.txt')).toBe('file');
-        expect(name('file.txt')).toBe('file');
-        expect(name('file_without_extension')).toBe('file_without_extension');
-        expect(name('file.with.many.dots.txt')).toBe('file.with.many.dots');
+        expect(nameWithoutExtension('/path/to/file.txt')).toBe('file');
+        expect(nameWithoutExtension('C:/Users/John/file.txt')).toBe('file');
+        expect(nameWithoutExtension('file.txt')).toBe('file');
+        expect(nameWithoutExtension('file_without_extension')).toBe('file_without_extension');
+        expect(nameWithoutExtension('file.with.many.dots.txt')).toBe('file.with.many.dots');
       });
       
       it('应该正确处理文件夹路径', () => {
-        expect(name('/path/to/folder/')).toBe('folder');
-        expect(name('C:\\Users\\John\\Documents\\')).toBe('Documents');
-        expect(name('/path/to/folder//')).toBe('folder');
-        expect(name('C:\\Users\\John\\folder\\\\')).toBe('folder');
+        expect(nameWithoutExtension('/path/to/folder/')).toBe('folder');
+        expect(nameWithoutExtension('C:/Users/John/Documents/')).toBe('Documents');
+        expect(nameWithoutExtension('/path/to/folder//')).toBe('folder');
+        expect(nameWithoutExtension('C:/Users/John/folder/')).toBe('folder');
       });
     });
 
@@ -223,6 +244,7 @@ describe('fileCommonUtil.ts 测试', () => {
         expect(getFileTypeDisplayName('text')).toBe('文本文件');
         expect(getFileTypeDisplayName('image')).toBe('图片文件');
         expect(getFileTypeDisplayName('video')).toBe('视频文件');
+        expect(getFileTypeDisplayName('audio')).toBe('音频文件');
         expect(getFileTypeDisplayName('pdf')).toBe('PDF文件');
         expect(getFileTypeDisplayName('other')).toBe('其他文件');
       });

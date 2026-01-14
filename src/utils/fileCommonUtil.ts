@@ -1,7 +1,7 @@
 // =======================================
 // 类型定义
 // =======================================
-export type DetectedFileType = 'text' | 'image' | 'video' | 'pdf' | 'docx' | 'other';
+export type DetectedFileType = 'text' | 'image' | 'video' | 'audio' | 'pdf' | 'docx' | 'other';
 
 // =======================================
 // 常量定义
@@ -16,7 +16,7 @@ const FILE_EXTENSIONS = {
   
   // 视频文件扩展名
   VIDEO: new Set([
-    'mp4','webm','ogg','ogv','mov','m4v','avi','mkv'
+    'mp4','webm','ogg','ogv','mov','m4v','avi','mkv','rm','rmvb'
   ]),
   
   // PDF文件扩展名
@@ -24,6 +24,11 @@ const FILE_EXTENSIONS = {
   
   // DOCX文件扩展名
   DOCX: new Set(['docx']),
+  
+  // 音频文件扩展名
+  AUDIO: new Set([
+    'mp3','wav','ogg','m4a','aac','flac','weba','opus'
+  ]),
   
   // 文本文件扩展名
   TEXT: new Set([
@@ -53,10 +58,26 @@ const FILE_TYPE_DISPLAY_NAMES: Record<DetectedFileType, string> = {
   text: '文本文件',
   image: '图片文件',
   video: '视频文件',
+  audio: '音频文件',
   pdf: 'PDF文件',
   docx: 'DOCX文件',
   other: '其他文件'
 };
+
+// electron 支持的媒体格式的后缀列表
+export const ELECTRON_SUPPORTED_MEDIA_FORMATS = [
+  'mp4', 'webm', 'ogg', 'ogv', 'mov', 'm4v',
+  'mp3', 'wav', 'm4a', 'aac', 'flac', 'weba', 'opus'
+];
+
+/**
+ * 检查媒体格式是否被 Electron 支持
+ * @param fileName 文件名或路径
+ */
+export function isElectronSupportedMedia(fileName: string): boolean {
+  const ext = getExtension(fileName).toLowerCase();
+  return ELECTRON_SUPPORTED_MEDIA_FORMATS.includes(ext);
+}
 
 // =======================================
 // 文件类型检测
@@ -81,6 +102,7 @@ export function getExtension(name: string): string {
 export function detectFileType(name: string): DetectedFileType {
   const ext = getExtension(name);
   if (FILE_EXTENSIONS.IMAGE.has(ext)) return 'image';
+  if (FILE_EXTENSIONS.AUDIO.has(ext)) return 'audio';
   if (FILE_EXTENSIONS.VIDEO.has(ext)) return 'video';
   if (FILE_EXTENSIONS.PDF.has(ext)) return 'pdf';
   if (FILE_EXTENSIONS.DOCX.has(ext)) return 'docx';
@@ -118,6 +140,14 @@ export function isVideoFile(name: string): boolean {
  */
 export function isPdfFile(name: string): boolean {
   return detectFileType(name) === 'pdf';
+}
+
+/**
+ * 判断是否为音频文件
+ * @param name 文件名或路径
+ */
+export function isAudioFile(name: string): boolean {
+  return detectFileType(name) === 'audio';
 }
 
 // =======================================

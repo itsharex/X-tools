@@ -1,7 +1,7 @@
 import React from 'react';
 import {Button, Typography} from 'antd';
 import {FileTextOutlined, FolderOpenOutlined} from '@ant-design/icons';
-import {detectFileType, getExtension, toFileUrl} from '../../utils/fileCommonUtil';
+import {detectFileType, getExtension, toFileUrl, isElectronSupportedMedia} from '../../utils/fileCommonUtil';
 import {ImageViewer} from './ImageViewer';
 import {VideoViewer} from './VideoViewer';
 import {PdfViewer} from './PdfViewer';
@@ -25,7 +25,7 @@ export const FileViewer: React.FC<FilePreviewProps> = ({filePath, fileName, init
         return <div style={{height: '100%'}}><ImageViewer path={filePath}/></div>;
     }
 
-    if (type === 'video') {
+    if ((type === 'video' || type === 'audio') && isElectronSupportedMedia(fileName)) {
         return <div style={{height: '100%'}}><VideoViewer path={filePath}/></div>;
     }
 
