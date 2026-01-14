@@ -64,8 +64,8 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ path }) => {
     img.src = toFileUrl(path);
     
     // 重置变换参数
-    setScale(1);
-    setPosition({ x: 0, y: 0 });
+    // setScale(1);
+    // setPosition({ x: 0, y: 0 });
     setRotation(0);
     setFlipped(false);
   }, [path]);
