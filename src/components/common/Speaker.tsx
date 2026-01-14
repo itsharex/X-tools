@@ -49,7 +49,7 @@ const cleanTextForSpeech = (text: string): string => {
         // eslint-disable-next-line no-control-regex
         .replace(/[\x00-\x1F\x7F]/g, '')
         // 移除不必要的标点符号（保留基本标点）
-        .replace(/[^\u4e00-\u9fa5a-zA-Z0-9，。！？：；、,.!?;: ]/g, '')
+        .replace(/[^一-龥a-zA-Z0-9，。！？：；、,.!?;: ]/g, '')
         // 移除连续的标点符号
         .replace(/([，。！？：；、,.!?;:]){2,}/g, '$1');
 
@@ -62,20 +62,26 @@ const cleanTextForSpeech = (text: string): string => {
  * 接收CSS选择符参数，实现语音朗读功能
  */
 const Speaker: React.FC<TextToSpeechProps> = ({ cssSelector }) => {
+    // ==================== 属性定义 ====================
+    
     // 状态管理
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentIndex, setCurrentIndex] = useState(-1); // 初始值为-1，避免默认选中第一行
     const [selectedText, setSelectedText] = useState('');
     const [elements, setElements] = useState<HTMLElement[]>([]);
 
+    // 引用管理
     const synthRef = useRef<SpeechSynthesis | null>(null);
     const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
     const originalStylesRef = useRef<Map<HTMLElement, string>>(new Map());
     const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const selectedTextRef = useRef(selectedText); // 保存最新的选中文本，解决闭包问题
 
+    // 上下文
     const { currentFile } = useAppContext();
 
+    // ==================== 方法定义 ====================
+    
     /**
      * 获取视口内第一个可见头部的元素索引，如果没有则找可见尾部的元素
      * @param elementsList 可选的元素列表，如果不提供则使用当前elements状态
@@ -259,6 +265,8 @@ const Speaker: React.FC<TextToSpeechProps> = ({ cssSelector }) => {
         }, 150);
     };
 
+    // ==================== 副作用处理 ====================
+    
     // 初始化语音合成实例、轮询和滚动监听
     useEffect(() => {
         synthRef.current = window.speechSynthesis;
@@ -369,6 +377,8 @@ const Speaker: React.FC<TextToSpeechProps> = ({ cssSelector }) => {
         play(text);
     }, [isPlaying, currentIndex, elements, selectedText]);
 
+    // ==================== 渲染输出 ====================
+    
     return (
         <Space size="small">
             <Tooltip title={isPlaying ? '暂停' : '播放'}>
