@@ -19,6 +19,33 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ path }) => {
   const imgRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   
+  // 适应屏幕的函数
+  const adaptToScreen = (image: HTMLImageElement) => {
+    const container = containerRef.current;
+    if (container && image.complete) {
+      // 获取容器的实际尺寸（减去一些边距）
+      const containerWidth = container.clientWidth;
+      const containerHeight = container.clientHeight;
+      
+      // 根据旋转角度决定原始宽高的使用方式
+      // 如果旋转了90度或270度（奇数倍的90度），则宽高需要交换
+      const isRotatedByOdd90 = (rotation % 180) !== 0;
+      const imgWidth = isRotatedByOdd90 ? image.naturalHeight : image.naturalWidth;
+      const imgHeight = isRotatedByOdd90 ? image.naturalWidth : image.naturalHeight;
+      
+      // 计算适应容器的缩放比例
+      const scaleX = containerWidth / imgWidth;
+      const scaleY = containerHeight / imgHeight;
+      let newScale = Math.min(scaleX, scaleY) * 0.9; // 保留一些边距
+      
+      // 限制缩放范围在合理区间内
+      newScale = Math.max(0.1, Math.min(newScale, 3));
+      
+      setScale(newScale);
+      setPosition({ x: 0, y: 0 });
+    }
+  };
+  
   // 加载图片并获取信息
   useEffect(() => {
     const img = new Image();
@@ -28,6 +55,11 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ path }) => {
         height: img.naturalHeight,
         type: path.split('.').pop()?.toLowerCase() || ''
       });
+      
+      // 图片加载完成后自动适应窗口
+      setTimeout(() => {
+        adaptToScreen(img);
+      }, 10);
     };
     img.src = toFileUrl(path);
     
@@ -99,6 +131,8 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ path }) => {
   const resetZoom = () => {
     setScale(1);
     setPosition({ x: 0, y: 0 });
+    setRotation(0);
+    setFlipped(false);
   };
   
   // 旋转控制函数
@@ -164,7 +198,7 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ path }) => {
   // 计算变换样式
   const transformStyle = {
     transform: `translate(${position.x}px, ${position.y}px) scale(${flipped ? -scale : scale}, ${scale}) rotate(${rotation}deg)`,
-    transition: dragging ? 'none' : 'transform 0.1s ease',
+    transition: dragging ? 'none' : 'transform 0.3s ease',
     cursor: dragging ? 'grabbing' : 'grab'
   };
   
@@ -206,43 +240,11 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ path }) => {
                 if (imgRef.current) {
                   // 等待图片完全加载
                   if (imgRef.current.complete) {
-                    const container = containerRef.current;
-                    if (container) {
-                      // 获取容器的实际尺寸（减去一些边距）
-                      const containerWidth = container.clientWidth;
-                      const containerHeight = container.clientHeight;
-                      const img = imgRef.current;
-                      
-                      // 计算适应容器的缩放比例
-                      const scaleX = containerWidth / img.naturalWidth;
-                      const scaleY = containerHeight / img.naturalHeight;
-                      let newScale = Math.min(scaleX, scaleY) * 0.9; // 保留一些边距
-                      
-                      // 限制缩放范围在合理区间内
-                      newScale = Math.max(0.1, Math.min(newScale, 3));
-                      
-                      setScale(newScale);
-                      setPosition({ x: 0, y: 0 });
-                    }
+                    adaptToScreen(imgRef.current);
                   } else {
                     // 如果图片还未加载完成，等待加载后再计算
                     imgRef.current.onload = () => {
-                      const container = containerRef.current;
-                      if (container) {
-                        const containerWidth = container.clientWidth;
-                        const containerHeight = container.clientHeight;
-                        const img = imgRef.current!;
-                        
-                        const scaleX = containerWidth / img.naturalWidth;
-                        const scaleY = containerHeight / img.naturalHeight;
-                        let newScale = Math.min(scaleX, scaleY) * 0.9;
-                        
-                        // 限制缩放范围在合理区间内
-                        newScale = Math.max(0.1, Math.min(newScale, 3));
-                        
-                        setScale(newScale);
-                        setPosition({ x: 0, y: 0 });
-                      }
+                      adaptToScreen(imgRef.current!);
                     };
                   }
                 }
