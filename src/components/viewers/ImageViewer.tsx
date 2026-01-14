@@ -1,23 +1,310 @@
-import React from 'react';
+import React, { useState, useRef, useEffect, WheelEvent } from 'react';
 import { toFileUrl } from '../../utils/fileCommonUtil';
+import { Button, Space, Tooltip, Slider, Typography } from 'antd';
+import { ZoomInOutlined, ZoomOutOutlined, FullscreenExitOutlined, RotateLeftOutlined, RotateRightOutlined, SwapOutlined, InfoCircleOutlined } from '@ant-design/icons';
 
 interface ImageViewerProps {
   path: string;
 }
 
 export const ImageViewer: React.FC<ImageViewerProps> = ({ path }) => {
+  const [scale, setScale] = useState<number>(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
+  const [lastPos, setLastPos] = useState({ x: 0, y: 0 });
+  const [rotation, setRotation] = useState<number>(0);
+  const [flipped, setFlipped] = useState<boolean>(false);
+  const [imageInfo, setImageInfo] = useState<{ width: number; height: number; type: string } | null>(null);
+  
+  const imgRef = useRef<HTMLImageElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  // 加载图片并获取信息
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => {
+      setImageInfo({
+        width: img.naturalWidth,
+        height: img.naturalHeight,
+        type: path.split('.').pop()?.toLowerCase() || ''
+      });
+    };
+    img.src = toFileUrl(path);
+    
+    // 重置变换参数
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
+    setRotation(0);
+    setFlipped(false);
+  }, [path]);
+  
+  // 鼠标滚轮缩放事件
+  const handleWheel = (e: WheelEvent) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    const newScale = Math.min(Math.max(0.1, scale + delta), 5);
+    setScale(newScale);
+  };
+  
+  // 鼠标按下事件（用于拖拽）
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0) return; // 只响应左键
+    setDragging(true);
+    setLastPos({ x: e.clientX - position.x, y: e.clientY - position.y });
+  };
+  
+  // 鼠标移动事件（用于拖拽）
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!dragging) return;
+    setPosition({
+      x: e.clientX - lastPos.x,
+      y: e.clientY - lastPos.y
+    });
+  };
+  
+  // 鼠标释放事件
+  const handleMouseUp = () => {
+    setDragging(false);
+  };
+  
+  // 添加鼠标事件监听器
+  useEffect(() => {
+    const container = containerRef.current;
+    if (container) {
+      container.addEventListener('wheel', handleWheel as any, { passive: false });
+      
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+      
+      return () => {
+        container.removeEventListener('wheel', handleWheel as any);
+        
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [dragging, lastPos, position, scale]);
+  
+  // 缩放控制函数
+  const zoomIn = () => {
+    const newScale = Math.min(scale + 0.2, 5);
+    setScale(newScale);
+  };
+  
+  const zoomOut = () => {
+    const newScale = Math.max(scale - 0.2, 0.1);
+    setScale(newScale);
+  };
+  
+  const resetZoom = () => {
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
+  };
+  
+  // 旋转控制函数
+  const rotateLeft = () => {
+    setRotation((prev) => (prev - 90) % 360);
+  };
+  
+  const rotateRight = () => {
+    setRotation((prev) => (prev + 90) % 360);
+  };
+  
+  // 翻转控制函数
+  const flipHorizontal = () => {
+    setFlipped(prev => !prev);
+  };
+  
+  // 键盘事件处理
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 防止在输入框等元素上触发
+      if ((e.target as HTMLElement).tagName === 'INPUT' || 
+          (e.target as HTMLElement).tagName === 'TEXTAREA' || 
+          (e.target as HTMLElement).contentEditable === 'true') {
+        return;
+      }
+      
+      if (e.key === '+' || e.key === '=') {
+        e.preventDefault();
+        zoomIn();
+      } else if (e.key === '-' || e.key === '_') {
+        e.preventDefault();
+        zoomOut();
+      } else if (e.key === '0') {
+        e.preventDefault();
+        resetZoom();
+      } else if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        rotateRight();
+      } else if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        flipHorizontal();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        setPosition(pos => ({ ...pos, x: pos.x - 50 }));
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        setPosition(pos => ({ ...pos, x: pos.x + 50 }));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setPosition(pos => ({ ...pos, y: pos.y - 50 }));
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setPosition(pos => ({ ...pos, y: pos.y + 50 }));
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [scale]);
+  
+  // 计算变换样式
+  const transformStyle = {
+    transform: `translate(${position.x}px, ${position.y}px) scale(${flipped ? -scale : scale}, ${scale}) rotate(${rotation}deg)`,
+    transition: dragging ? 'none' : 'transform 0.1s ease',
+    cursor: dragging ? 'grabbing' : 'grab'
+  };
+  
   return (
-    <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%'}}>
-      <img
-        src={toFileUrl(path)}
-        alt={path}
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* 工具栏 */}
+      <div style={{
+        padding: '8px 16px',
+        borderBottom: '1px solid #f0f0f0',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        background: '#fafafa',
+        zIndex: 1
+      }}>
+        <Space size="middle">
+          <Tooltip title="放大 (+=)">
+            <Button size="small" icon={<ZoomInOutlined />} onClick={zoomIn} />
+          </Tooltip>
+          <Tooltip title="缩小 (-_)">
+            <Button size="small" icon={<ZoomOutOutlined />} onClick={zoomOut} />
+          </Tooltip>
+          <Tooltip title="重置 (0)">
+            <Button size="small" icon={<FullscreenExitOutlined />} onClick={resetZoom} />
+          </Tooltip>
+          <Slider
+            min={0.1}
+            max={5}
+            step={0.1}
+            value={scale}
+            onChange={(val) => setScale(val)}
+            style={{ width: 100 }}
+          />
+          <span>{Math.round(scale * 100)}%</span>
+          <Tooltip title="适应屏幕">
+            <Button 
+              size="small" 
+              onClick={async () => {
+                if (imgRef.current) {
+                  // 等待图片完全加载
+                  if (imgRef.current.complete) {
+                    const container = containerRef.current;
+                    if (container) {
+                      // 获取容器的实际尺寸（减去一些边距）
+                      const containerWidth = container.clientWidth;
+                      const containerHeight = container.clientHeight;
+                      const img = imgRef.current;
+                      
+                      // 计算适应容器的缩放比例
+                      const scaleX = containerWidth / img.naturalWidth;
+                      const scaleY = containerHeight / img.naturalHeight;
+                      let newScale = Math.min(scaleX, scaleY) * 0.9; // 保留一些边距
+                      
+                      // 限制缩放范围在合理区间内
+                      newScale = Math.max(0.1, Math.min(newScale, 3));
+                      
+                      setScale(newScale);
+                      setPosition({ x: 0, y: 0 });
+                    }
+                  } else {
+                    // 如果图片还未加载完成，等待加载后再计算
+                    imgRef.current.onload = () => {
+                      const container = containerRef.current;
+                      if (container) {
+                        const containerWidth = container.clientWidth;
+                        const containerHeight = container.clientHeight;
+                        const img = imgRef.current!;
+                        
+                        const scaleX = containerWidth / img.naturalWidth;
+                        const scaleY = containerHeight / img.naturalHeight;
+                        let newScale = Math.min(scaleX, scaleY) * 0.9;
+                        
+                        // 限制缩放范围在合理区间内
+                        newScale = Math.max(0.1, Math.min(newScale, 3));
+                        
+                        setScale(newScale);
+                        setPosition({ x: 0, y: 0 });
+                      }
+                    };
+                  }
+                }
+              }}
+            >
+              适应
+            </Button>
+          </Tooltip>
+        </Space>
+        
+        <Space size="middle">
+          <Tooltip title="向左旋转 (R)">
+            <Button size="small" icon={<RotateLeftOutlined />} onClick={rotateLeft} />
+          </Tooltip>
+          <Tooltip title="向右旋转 (R)">
+            <Button size="small" icon={<RotateRightOutlined />} onClick={rotateRight} />
+          </Tooltip>
+          <Tooltip title="水平翻转 (F)">
+            <Button size="small" icon={<SwapOutlined />} onClick={flipHorizontal} />
+          </Tooltip>
+          <Tooltip title="居中对齐">
+            <Button 
+              size="small" 
+              onClick={() => setPosition({ x: 0, y: 0 })}
+            >
+              居中
+            </Button>
+          </Tooltip>
+        </Space>
+        
+        <Space size="middle">
+          {imageInfo && (
+            <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
+              <InfoCircleOutlined /> {imageInfo.width}×{imageInfo.height} {imageInfo.type.toUpperCase()}
+            </Typography.Text>
+          )}
+        </Space>
+      </div>
+      
+      {/* 图片容器 */}
+      <div
+        ref={containerRef}
         style={{
-          maxWidth: '100%',
-          maxHeight: '100%',
-          borderRadius: 8,
-          background: '#fff'
+          flex: 1,
+          overflow: 'auto',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          background: 'linear-gradient(45deg, #f0f0f0 25%, transparent 25%), linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f0f0f0 75%), linear-gradient(-45deg, transparent 75%, #f0f0f0 75%)',
+          backgroundSize: '20px 20px',
+          backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
         }}
-      />
+        onMouseDown={handleMouseDown}
+      >
+        <img
+          ref={imgRef}
+          src={toFileUrl(path)}
+          alt={path}
+          style={transformStyle}
+          draggable="false"
+        />
+      </div>
     </div>
   );
 };
