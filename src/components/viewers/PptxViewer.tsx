@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Button, Slider, message, Tooltip } from 'antd';
+import { Button, message, Tooltip } from 'antd';
 import { ArrowLeftOutlined, ArrowRightOutlined, ZoomInOutlined, ZoomOutOutlined, ReloadOutlined } from '@ant-design/icons';
 import { OfficeParserAST, OfficeContentNode, OfficeAttachment } from '../../office/types';
 
@@ -13,28 +13,6 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({ path }) => {
     const [zoomLevel, setZoomLevel] = useState(100);
     const [loading, setLoading] = useState(true);
     const slideContainerRef = useRef<HTMLDivElement>(null);
-
-    // 解析 PPTX 文件
-    useEffect(() => {
-        const parsePptx = async () => {
-            setLoading(true);
-            try {
-                const contentAST = await window.electronAPI.parseOffice(path, {
-                    extractAttachments: true,
-                    includeRawContent: true
-                });
-                setPresentationData(contentAST);
-                setCurrentSlideIndex(0);
-                setLoading(false);
-            } catch (error) {
-                console.error('解析 PPTX 文件失败:', error);
-                message.error('解析 PPTX 文件失败');
-                setLoading(false);
-            }
-        };
-
-        parsePptx();
-    }, [path]);
 
     // 导航控制
     const handlePrevSlide = () => {
@@ -56,12 +34,6 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({ path }) => {
         setZoomLevel(prev => Math.max(prev - 10, 50));
     };
 
-    const handleZoomChange = (value: number | null) => {
-        if (value !== null) {
-            setZoomLevel(value);
-        }
-    };
-
     const handleResetZoom = () => {
         setZoomLevel(100);
     };
@@ -81,14 +53,6 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({ path }) => {
                 break;
         }
     };
-
-    // 键盘事件监听
-    useEffect(() => {
-        window.addEventListener('keydown', handleKeyDown);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-        };
-    }, [handleKeyDown]);
 
     // 获取当前幻灯片的图片
     const getSlideImages = (slide: OfficeContentNode): OfficeAttachment[] => {
@@ -150,7 +114,7 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({ path }) => {
                             ))}
                         </p>
                     );
-                case 'heading':
+                case 'heading': {
                     const level = (node.metadata as any)?.level || 1;
                     const headingProps = {
                         style: { textAlign: (node.metadata as any)?.alignment || 'left' },
@@ -172,8 +136,9 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({ path }) => {
                             return <h5 {...headingProps} />;
                         default:
                             return <h6 {...headingProps} />;
-                    };
-                case 'list':
+                    }
+                }
+                case 'list': {
                     const ListTag = (node.metadata as any)?.listType === 'ordered' ? 'ol' : 'ul';
                     const indentation = (node.metadata as any)?.indentation || 0;
                     return (
@@ -183,6 +148,7 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({ path }) => {
                             ))}
                         </ListTag>
                     );
+                }
                 case 'image':
                     // 图片会在单独的区域渲染
                     return null;
@@ -295,6 +261,36 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({ path }) => {
             </div>
         );
     };
+
+    // 解析 PPTX 文件
+    useEffect(() => {
+        const parsePptx = async () => {
+            setLoading(true);
+            try {
+                const contentAST = await window.electronAPI.parseOffice(path, {
+                    extractAttachments: true,
+                    includeRawContent: true
+                });
+                setPresentationData(contentAST);
+                setCurrentSlideIndex(0);
+                setLoading(false);
+            } catch (error) {
+                console.error('解析 PPTX 文件失败:', error);
+                message.error('解析 PPTX 文件失败');
+                setLoading(false);
+            }
+        };
+
+        parsePptx();
+    }, [path]);
+
+    // 键盘事件监听
+    useEffect(() => {
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [handleKeyDown]);
 
     if (loading) {
         return (
