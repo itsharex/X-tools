@@ -1,6 +1,6 @@
-import {OfficeParser} from 'officeparser';
 import * as fs from 'fs';
 import * as path from 'path';
+import {OfficeParser} from "../src/office/OfficeParser";
 
 async function testOfficeParser() {
     console.log('测试 officeparser 库的能力...\n');
@@ -14,14 +14,14 @@ async function testOfficeParser() {
         const ext = path.extname(file).toLowerCase();
 
         // 只测试Office文档格式
-        // if (['.docx', '.xlsx', '.pptx'].includes(ext)) {
-        if (['.pptx'].includes(ext)) {
+        if (['.docx', '.xlsx', '.pptx'].includes(ext)) {
+        // if (['.pptx'].includes(ext)) {
             console.log(`正在解析文件: ${file}`);
             console.log('='.repeat(40));
 
             try {
                 // 使用 OfficeParser 解析
-                const contentAST = await OfficeParser.parseOffice(filePath, {extractAttachments: true, includeRawContent: false});
+                const contentAST = await OfficeParser.parseOffice(filePath, {extractAttachments: false, includeRawContent: false});
 
                 console.log(`文件类型: ${contentAST.type || 'Unknown'}`);
                 console.log(`元数据:`, contentAST.metadata ? JSON.stringify(contentAST.metadata, null, 2) : 'None');
@@ -37,11 +37,28 @@ async function testOfficeParser() {
                 // } else {
                 //     console.log('内容 (字符串):', typeof contentAST.content === 'string' ? (contentAST.content as string) : contentAST.content);
                 // }
-                //
+                
                 if (contentAST.attachments) {
                     console.log('附件')
                     contentAST.attachments.forEach((item, index) => {
-                        console.log(index, typeof item === 'object' ? JSON.stringify(item, null, 2) : String(item));
+                        if (typeof item === 'object' && item !== null) {
+                            console.log(`附件 ${index + 1}:`);
+                            console.log(`  名称: ${item.name}`);
+                            console.log(`  类型: ${item.type}`);
+                            console.log(`  MIME类型: ${item.mimeType}`);
+                            console.log(`  扩展名: ${item.extension}`);
+                            if (item.ocrText) {
+                                console.log(`  OCR文本: ${item.ocrText}`);
+                            }
+                            if (item.altText) {
+                                console.log(`  替代文本: ${item.altText}`);
+                            }
+                            if (item.chartData) {
+                                console.log(`  图表数据: 存在`);
+                            }
+                        } else {
+                            console.log(`附件 ${index + 1}:`, String(item));
+                        }
                     })
                 }
 

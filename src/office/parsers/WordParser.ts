@@ -408,30 +408,21 @@ export const parseWord = async (buffer: Buffer, config: OfficeParserConfig): Pro
                 // Formatting
                 let formatting: TextFormatting = {};
                 // Apply paragraph-level formatting
-                for (const key in paragraphRunFormatting) {
-                    (formatting as any)[key] = (paragraphRunFormatting as any)[key];
+                if (paragraphRunFormatting) {
+                    formatting = { ...formatting, ...paragraphRunFormatting };
                 }
 
                 // Check for run style
                 const rStyle = rPr ? getElementsByTagName(rPr, "w:rStyle")[0] : null;
                 const rStyleVal = rStyle ? rStyle.getAttribute("w:val") : pStyleVal;
-                if (rStyleVal && styleMap[rStyleVal]) {
-                    for (const key in styleMap[rStyleVal].formatting) {
-                        (formatting as any)[key] = (styleMap[rStyleVal].formatting as any)[key];
-                    }
+                if (rStyleVal && styleMap[rStyleVal]?.formatting) {
+                    formatting = { ...formatting, ...styleMap[rStyleVal].formatting };
                 }
 
                 // Apply direct run properties
                 if (rPr) {
                     const directFormatting = extractFormattingFromXml(rPr);
-                    for (const key in directFormatting) {
-                        const value = directFormatting[key as keyof TextFormatting];
-                        if (value === false) {
-                            delete formatting[key as keyof TextFormatting];
-                        } else if (value !== undefined) {
-                            formatting[key as keyof TextFormatting] = value as any;
-                        }
-                    }
+                    formatting = { ...formatting, ...directFormatting };
                 }
 
                 // Inherit paragraph background
