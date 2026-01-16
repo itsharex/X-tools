@@ -15,6 +15,7 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ path }) => {
   const [rotation, setRotation] = useState<number>(0);
   const [flipped, setFlipped] = useState<boolean>(false);
   const [imageInfo, setImageInfo] = useState<{ width: number; height: number; type: string } | null>(null);
+  const [showScrollbars, setShowScrollbars] = useState(true);
   
   const imgRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -195,6 +196,35 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ path }) => {
     };
   }, [scale]);
   
+  // 动态控制滚动条显示
+  useEffect(() => {
+    const container = containerRef.current;
+    const img = imgRef.current;
+    
+    if (container && img && imageInfo) {
+      // 计算旋转后的图片尺寸
+      const rotationRad = (rotation * Math.PI) / 180;
+      const cos = Math.abs(Math.cos(rotationRad));
+      const sin = Math.abs(Math.sin(rotationRad));
+      
+      // 考虑旋转后的宽高
+      const rotatedWidth = imageInfo.width * cos + imageInfo.height * sin;
+      const rotatedHeight = imageInfo.width * sin + imageInfo.height * cos;
+      
+      // 应用缩放因子
+      const scaledWidth = rotatedWidth * scale;
+      const scaledHeight = rotatedHeight * scale;
+      
+      // 获取容器尺寸
+      const containerWidth = container.clientWidth;
+      const containerHeight = container.clientHeight;
+      
+      // 判断是否需要显示滚动条
+      const needsScrollbars = scaledWidth > containerWidth || scaledHeight > containerHeight;
+      setShowScrollbars(needsScrollbars);
+    }
+  }, [scale, rotation, imageInfo]);
+  
   // 计算变换样式
   const transformStyle = {
     transform: `translate(${position.x}px, ${position.y}px) scale(${flipped ? -scale : scale}, ${scale}) rotate(${rotation}deg)`,
@@ -289,7 +319,7 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ path }) => {
         ref={containerRef}
         style={{
           flex: 1,
-          overflow: 'auto',
+          overflow: showScrollbars ? 'auto' : 'hidden',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
