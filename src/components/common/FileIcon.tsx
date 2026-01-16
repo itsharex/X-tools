@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileTextOutlined, FileImageOutlined, PlayCircleOutlined, FilePdfOutlined, FileOutlined, FolderOutlined, FileWordOutlined, AudioOutlined } from '@ant-design/icons';
+import { FileTextOutlined, FileImageOutlined, PlayCircleOutlined, FilePdfOutlined, FileOutlined, FolderOutlined, FileWordOutlined, AudioOutlined, FilePptOutlined, FileExcelOutlined } from '@ant-design/icons';
 import { detectFileType } from '../../utils/fileCommonUtil';
 
 interface FileIconProps {
@@ -33,6 +33,10 @@ export const FileIcon: React.FC<FileIconProps> = ({
             return <FilePdfOutlined className={className} style={style} />;
         case 'docx':
             return <FileWordOutlined className={className} style={style} />;
+        case 'pptx':
+            return <FilePptOutlined className={className} style={style} />;
+        case 'xlsx':
+            return <FileExcelOutlined className={className} style={style} />;
         default:
             return <FileOutlined className={className} style={style} />;
     }
