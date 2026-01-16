@@ -117,17 +117,26 @@ const DictionaryPanel: React.FC = () => {
             const selectedText = window.getSelection()?.toString().trim();
             if (selectedText && selectedText.length > 0) {
                 setSearchTerm(selectedText);
-            } else {
-                setSearchTerm('');
-            }
+            } 
         };
 
         // 添加selectionchange事件监听器
         document.addEventListener('selectionchange', handleSelectionChange);
 
+        // 添加PDF文本选中事件监听器
+        const handlePdfTextSelected = (event: CustomEvent) => {
+            const selectedText = event.detail?.trim();
+            if (selectedText && selectedText.length > 0) {
+                setSearchTerm(selectedText);
+            }
+        };
+
+        window.addEventListener('pdf-text-selected', handlePdfTextSelected);
+
         // 组件卸载时移除事件监听器
         return () => {
             document.removeEventListener('selectionchange', handleSelectionChange);
+            window.removeEventListener('pdf-text-selected', handlePdfTextSelected);
         };
     }, []);
 
